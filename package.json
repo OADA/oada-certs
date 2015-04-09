@@ -1,0 +1,50 @@
+{
+  "name": "oauth-dyn-reg-metadata",
+  "version": "0.0.0",
+  "description": "Generate and verify oauth dynamic client registration metadata",
+  "main": "index.js",
+  "scripts": {
+    "test": "mocha -w",
+    "cover": "istanbul cover _mocha",
+    "lint": "jshint --reporter node_modules/jshint-stylish/stylish.js .",
+    "style": "jscs .",
+    "clean": "rm -rf ./coverage"
+  },
+  "pre-commit": [
+    "lint",
+    "style",
+    "test"
+  ],
+  "directories": {
+    "test": "test"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/OADA/oauth-dyn-reg-metadata.git"
+  },
+  "keywords": [
+    "oada"
+  ],
+  "author": {
+    "name": "Pat Sabpisal",
+    "email": "pat@uniduck.co"
+  },
+  "license": "Apache-2.0",
+  "bugs": {
+    "url": "https://github.com/OADA/oauth-dyn-reg-metadata/issues"
+  },
+  "homepage": "https://github.com/OADA/oauth-dyn-reg-metadata",
+  "dependencies": {
+    "bluebird": "^2.9.24"
+  },
+  "devDependencies": {
+    "chai": "^2.2.0",
+    "chai-as-promised": "^4.3.0",
+    "istanbul": "^0.3.13",
+    "jscs": "^1.12.0",
+    "jshint": "^2.6.3",
+    "jshint-stylish": "^1.0.1",
+    "mocha": "^2.2.4",
+    "pre-commit": "^1.0.6"
+  }
+}

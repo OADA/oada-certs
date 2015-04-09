@@ -1,0 +1,31 @@
+language: node_js
+node_js:
+- '0.10'
+- '0.11'
+- '0.12'
+- node
+- iojs
+env:
+- TEST=cover
+
+sudo: false
+before_deploy:
+- npm install -g npm
+deploy:
+  provider: npm
+  email: pat@uniduck.co
+  api_key:
+    secure: ixgdOj3pxFFTPtOQbbKPJK24zR1jW2DBJkoYVY7UWXysnLNXeHLBUB7Apq9wF7QhBGRhczIJWA15eMiwc0VFJKmLOol4klMW0sAtdrC39mHmXpEzEThwklKCEu7ApLe3OzQDK2qd9hOMI4BK3dqAu96NBqN8EdEqYYJuMHtTJfg=
+  on:
+    node: node
+    tags: true
+    all_branches: true
+    repo: OADA/oauth-dyn-reg-metadata
+before_install:
+- npm install -g coveralls
+script:
+- npm run lint
+- npm run style
+- npm run $TEST
+after_success:
+- cat ./coverage/lcov.info | coveralls --verbose
