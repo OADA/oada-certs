@@ -1,0 +1,55 @@
+{
+  "$schema": "http://json-schema.org/draft-04/schema#",
+  "title": "OAuth metadata",
+  "type": "object",
+  "properties": {
+    "redirect_uris": {
+      "type": "array",
+      "uniqueItems": true,
+      "minItems": 1,
+      "items": {
+        "type": "string"
+      }
+    },
+    "token_endpoint_auth_method": {
+      "type": "string"
+    },
+    "grant_types": {
+      "type": "array",
+      "uniqueItems": true,
+      "minItems": 1,
+      "items":{
+        "type": "string",
+        "anyOf": [
+            { "pattern": "^authorization_code$" },
+            { "pattern": "^implicit$" },
+            { "pattern": "^password$" },
+            { "pattern": "^client_credentials$" },
+            { "pattern": "^refresh_token$" },
+            { "pattern": "^urn:ietf:params:oauth:grant-type:.*$" }
+        ]
+      }
+    },
+    "response_types": {
+      "type": "string"
+    },
+    "client_name": {
+      "type": "array",
+      "minItems": 1,
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    },
+    "client_uri": {},
+    "logo_uri": {},
+    "scope": {},
+    "contacts": {},
+    "tos_uri": {},
+    "policy_uri": {},
+    "jwks_uri": {},
+    "jwks": {},
+    "software_id": {},
+    "software_version": {}
+  }
+}

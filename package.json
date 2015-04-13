@@ -35,7 +35,11 @@
   },
   "homepage": "https://github.com/OADA/oauth-dyn-reg-metadata",
   "dependencies": {
-    "bluebird": "^2.9.24"
+    "bluebird": "^2.9.24",
+    "jsck": "^0.2.4",
+    "jsonwebtoken": "^5.0.0",
+    "object-assign": "~2.0.0",
+    "pem-jwk": "^1.5.1"
   },
   "devDependencies": {
     "chai": "^2.2.0",

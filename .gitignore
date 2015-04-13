@@ -34,3 +34,5 @@ dist
 
 # Local yeoman stuff
 .yo-rc.json
+
+.test.js
