@@ -4,7 +4,7 @@
   "description": "Generate and verify oauth dynamic client registration metadata",
   "main": "index.js",
   "scripts": {
-    "test": "mocha -w",
+    "test": "mocha",
     "cover": "istanbul cover _mocha",
     "lint": "jshint --reporter node_modules/jshint-stylish/stylish.js .",
     "style": "jscs .",
