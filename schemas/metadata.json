@@ -1,14 +1,19 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "title": "OAuth metadata",
+  "title": "OAuth client metadata",
   "type": "object",
+  "patterns": {
+    "url": {
+        "type": "string",
+        "pattern": "^(https?|ftp)://[^\\s/$.?#].[^\\s]*$$"
+    }
+  },
   "properties": {
     "redirect_uris": {
       "type": "array",
-      "uniqueItems": true,
       "minItems": 1,
       "items": {
-        "type": "string"
+        "$ref": "#/patterns/url"
       }
     },
     "token_endpoint_auth_method": {
@@ -16,7 +21,6 @@
     },
     "grant_types": {
       "type": "array",
-      "uniqueItems": true,
       "minItems": 1,
       "items":{
         "type": "string",
@@ -31,25 +35,49 @@
       }
     },
     "response_types": {
-      "type": "string"
-    },
-    "client_name": {
       "type": "array",
       "minItems": 1,
-      "uniqueItems": true,
-      "items": {
-        "type": "string"
+      "items":{
+        "type": "string",
+        "anyOf": [
+            { "pattern": "^code$" },
+            { "pattern": "^token$" }
+        ]
       }
     },
-    "client_uri": {},
-    "logo_uri": {},
-    "scope": {},
-    "contacts": {},
-    "tos_uri": {},
-    "policy_uri": {},
-    "jwks_uri": {},
-    "jwks": {},
-    "software_id": {},
+    "client_name": {
+      "type": "string"
+    },
+    "client_uri": {
+        "$ref": "#/patterns/url"
+    },
+    "logo_uri": {
+        "$ref": "#/patterns/url"
+    },
+    "scope": {
+        "type": "array"
+    },
+    "contacts": {
+        "type": "array",
+        "items":{
+            "type": "string"
+        }
+    },
+    "tos_uri": {
+        "$ref": "#/patterns/url"
+    },
+    "policy_uri": {
+        "$ref": "#/patterns/url"
+    },
+    "jwks_uri": {
+        "$ref": "#/patterns/url"
+    },
+    "jwks": {
+        "type": "object"
+    },
+    "software_id": {
+        "type": "string"
+    },
     "software_version": {}
   }
 }
