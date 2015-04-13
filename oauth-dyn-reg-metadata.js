@@ -18,9 +18,8 @@
 var objectAssign = require('object-assign');
 var jwt = require('jsonwebtoken');
 // var pem_jwk = require('pem-jwk');
-var JSCK = require('jsck');
-var schema = require('./schemas/metadata.json');
-var validator = new JSCK.draft4(schema);
+var skeemas = require('skeemas');
+var metdataSchema = require('./schemas/metadata.json');
 
 function InvalidFormatException(message) {
     this.message = message;
@@ -34,11 +33,10 @@ function InvalidFormatException(message) {
 */
 function generate(metadata, key, options) {
 
-    var softwareStatement = metadata['software_statement'];
     //TODO: make schema for the top level doc
-    var err = validator.validate(softwareStatement);
+    var result = skeemas.validate(metadata['software_statement'], metdataSchema);
 
-    if (!err.valid) {
+    if (!result.valid) {
         throw new InvalidFormatException('Invalid software_statement');
     }
 
@@ -60,9 +58,11 @@ function generate(metadata, key, options) {
         });
     }
 
-    if (softwareStatement) {
+    objectAssign(options.payload, metadata['software_statement']);
+
+    if (metadata['software_statement']) {
         objectAssign(metadata, {
-            'software_statement': jwt.sign(softwareStatement, key.pem, options)
+            'software_statement': jwt.sign(options.payload, key.pem, options)
         });
     }
 

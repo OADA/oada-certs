@@ -1,6 +1,6 @@
 {
   "$schema": "http://json-schema.org/draft-04/schema#",
-  "title": "OAuth client metadata",
+  "title": "OAuth 2.0 Client Metadata Document (draft-ietf-oauth-dyn-reg-27)",
   "type": "object",
   "patterns": {
     "url": {
@@ -73,12 +73,14 @@
         "$ref": "#/patterns/url"
     },
     "jwks": {
-        "type": "object"
+
     },
     "software_id": {
         "type": "string"
     },
-    "software_version": {}
+    "software_version": {
+        "type": "string"
+    }
   },
   "oneOf": [
         {

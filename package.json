@@ -39,7 +39,8 @@
     "jsck": "^0.2.4",
     "jsonwebtoken": "^5.0.0",
     "object-assign": "~2.0.0",
-    "pem-jwk": "^1.5.1"
+    "pem-jwk": "^1.5.1",
+    "skeemas": "^1.1.6"
   },
   "devDependencies": {
     "chai": "^2.2.0",
