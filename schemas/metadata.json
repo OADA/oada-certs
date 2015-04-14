@@ -5,7 +5,7 @@
   "patterns": {
     "url": {
         "type": "string",
-        "pattern": "^(https?|ftp)://[^\\s/$.?#].[^\\s]*$$"
+        "pattern": "^([a-zA-Z_0-9]+)://[^\\s/$.?#].[^\\s]*$$"
     }
   },
   "properties": {
