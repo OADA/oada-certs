@@ -34,9 +34,9 @@ function InvalidFormatException(message) {
 function generate(metadata, key, options) {
 
     var pem;
-    if(key.pem){
+    if (key.pem) {
         pem = key.pem;
-    }else{
+    } else {
         pem = jwk2pem(key);
     }
 
@@ -57,7 +57,6 @@ function generate(metadata, key, options) {
             }
         });
     }
-
 
     if (metadata['software_statement']) {
 
