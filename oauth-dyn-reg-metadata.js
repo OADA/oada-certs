@@ -34,7 +34,8 @@ function InvalidFormatException(message) {
 function generate(metadata, key, options) {
 
     //TODO: make schema for the top level doc
-    var result = skeemas.validate(metadata['software_statement'], metdataSchema);
+    var result = skeemas.validate(metadata['software_statement'],
+        metdataSchema);
 
     if (!result.valid) {
         throw new InvalidFormatException('Invalid software_statement');
