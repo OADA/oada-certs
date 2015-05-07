@@ -23,26 +23,14 @@
       "type": "array",
       "minItems": 1,
       "items":{
-        "type": "string",
-        "anyOf": [
-            { "pattern": "^authorization_code$" },
-            { "pattern": "^implicit$" },
-            { "pattern": "^password$" },
-            { "pattern": "^client_credentials$" },
-            { "pattern": "^refresh_token$" },
-            { "pattern": "^urn:ietf:params:oauth:grant-type:.*$" }
-        ]
+        "type": "string"
       }
     },
     "response_types": {
       "type": "array",
       "minItems": 1,
       "items":{
-        "type": "string",
-        "anyOf": [
-            { "pattern": "^code$" },
-            { "pattern": "^token$" }
-        ]
+        "type": "string"
       }
     },
     "client_name": {
