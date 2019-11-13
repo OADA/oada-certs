@@ -15,13 +15,13 @@
 
 'use strict';
 
-var chai = require('chai');
+const chai = require('chai');
 chai.use(require('chai-as-promised'));
-var expect = chai.expect;
-//var oauthDynRegMetadata = require('../');
-var mut = require('../');
+const expect = chai.expect;
 
-describe('oauth-dyn-reg-metadata', function() {
+const mut = require('../generate');
+
+describe('oada-certs#generate', function() {
 
     // This is probably a useless test
     it('should be exported', function() {

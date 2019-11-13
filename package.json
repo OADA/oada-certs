@@ -1,55 +1,55 @@
 {
-  "name": "oauth-dyn-reg-metadata",
-  "version": "0.0.1",
-  "description": "Generate and verify oauth dynamic client registration metadata",
-  "main": "oauth-dyn-reg-metadata.js",
+  "name": "oada-certs",
+  "bin": "./cli.js",
+  "version": "1.0.0",
+  "description": "Generate and verify oauth dynamic client registration certificates in the Open Ag Data Alliance (OADA) and Trellis ecosystems",
+  "main": "index.js",
   "scripts": {
-    "test": "mocha",
-    "cover": "istanbul cover _mocha",
-    "lint": "jshint --reporter node_modules/jshint-stylish/stylish.js .",
-    "style": "jscs .",
-    "clean": "rm -rf ./coverage"
+    "test": "mocha"
   },
-  "pre-commit": [
-    "lint",
-    "style",
-    "test"
-  ],
   "directories": {
     "test": "test"
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/OADA/oauth-dyn-reg-metadata.git"
+    "url": "https://github.com/OADA/oada-certs"
   },
   "keywords": [
-    "oada"
+    "oada",
+    "trellis"
   ],
   "author": {
-    "name": "Pat Sabpisal",
-    "email": "pat@uniduck.co"
+    "name": "Aaron Ault",
+    "email": "ault@purdue.edu"
   },
   "license": "Apache-2.0",
   "bugs": {
-    "url": "https://github.com/OADA/oauth-dyn-reg-metadata/issues"
+    "url": "https://github.com/OADA/oada-certs/issues"
   },
-  "homepage": "https://github.com/OADA/oauth-dyn-reg-metadata",
+  "homepage": "https://github.com/OADA/oada-certs",
   "dependencies": {
-    "bluebird": "^2.9.24",
-    "jsck": "^0.2.4",
-    "jsonwebtoken": "^5.0.0",
-    "object-assign": "~2.0.0",
-    "pem-jwk": "^1.5.1",
-    "skeemas": "^1.1.6"
+    "bluebird": "^3.7.1",
+    "debug": "^4.1.1",
+    "deep-equal": "^1.1.1",
+    "execa": "^3.2.0",
+    "inquirer": "^7.0.0",
+    "jsck": "^0.3.2",
+    "jsonwebtoken": "^8.5.1",
+    "jws": "^3.2.2",
+    "minimist": "^1.2.0",
+    "pem-jwk": "^2.0.0",
+    "skeemas": "^1.2.5",
+    "superagent": "^5.1.0",
+    "url": "^0.11.0",
+    "uuid": "^3.3.3"
   },
   "devDependencies": {
-    "chai": "^2.2.0",
-    "chai-as-promised": "^4.3.0",
-    "istanbul": "^0.3.13",
-    "jscs": "^1.12.0",
-    "jshint": "^2.6.3",
-    "jshint-stylish": "^1.0.1",
-    "mocha": "^2.2.4",
-    "pre-commit": "^1.0.6"
+    "chai": "^4.2.0",
+    "chai-as-promised": "^7.1.1",
+    "cors": "^2.8.5",
+    "express": "^4.17.1",
+    "https": "^1.0.0",
+    "mocha": "^6.2.2",
+    "nock": "^11.7.0"
   }
 }
