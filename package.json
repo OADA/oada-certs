@@ -1,7 +1,7 @@
 {
-  "name": "oada-certs",
+  "name": "@oada/oada-certs",
   "bin": "./cli.js",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Generate and verify oauth dynamic client registration certificates in the Open Ag Data Alliance (OADA) and Trellis ecosystems",
   "main": "index.js",
   "scripts": {

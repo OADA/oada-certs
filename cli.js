@@ -46,14 +46,12 @@ if (argv.validate) {
     catch(e) { }
   }
   // Now validate the JWT:
-  oadacerts.validate(signedcert)
-  .spread((trusted,clientreg) => {
-    if (trusted) {
-      console.log('Certificate IS valid and trusted');
-    } else {
-      console.log('Certificate IS NOT valid/trusted.  Run with DEBUG="*" for more detailed info');
-    }
-    console.log('Decoded client certificate is: ', JSON.stringify(clientreg, false, '  '));
+  return oadacerts.validate(signedcert)
+  .then(({clientcert,trusted,valid,details}) => {
+    console.log('trusted: ', trusted);
+    console.log('valid: ', valid);
+    console.log('decoded client cert: ', clientcert);
+    console.log('details on validation: ', details);
   });
 }
 
