@@ -93,20 +93,51 @@ describe('jwks-utils', function() {
         .to.eventually.deep.equal(jwk);
     });
 
-    it('should work with "jku" JOSE header', () => {
+    it('should NOT work with "jku" JOSE header if hint is false (untrusted)', () => {
       const sig = jws.sign({
         header: {
           alg: 'HS256',
           jku: 'https://localhost:3000/jwks_uri',
-          kid: jwk.kid
+          kid: jwk.kid,
         },
         payload: 'FOO BAR',
         secret: 'DEAD BEEF'
       });
 
       return expect(jwku.jwkForSignature(sig, false))
+        .to.eventually.be.rejected;
+    });
+
+    it('should work with "jku" JOSE header if hint is a string and is the same as the jku header', () => {
+       const sig = jws.sign({
+        header: {
+          alg: 'HS256',
+          jku: 'https://localhost:3000/jwks_uri',
+          kid: jwk.kid,
+        },
+        payload: 'FOO BAR',
+        secret: 'DEAD BEEF'
+      });
+
+      return expect(jwku.jwkForSignature(sig, 'https://localhost:3000/jwks_uri'))
         .to.eventually.deep.equal(jwk);
     });
+
+    it('should by default use the hint string to fetch the jwks instead of the jku on the header if they do not match', () => {
+        const sig = jws.sign({
+        header: {
+          alg: 'HS256',
+          jku: 'https://localhost:3000/does_not_exist',
+          kid: jwk.kid,
+        },
+        payload: 'FOO BAR',
+        secret: 'DEAD BEEF'
+      });
+
+      return expect(jwku.jwkForSignature(sig, 'https://localhost:3000/jwks_uri'))
+        .to.eventually.deep.equal(jwk);
+    });
+     
 
     it('should work with URI hint', () => {
       const sig = jws.sign({
@@ -211,7 +242,7 @@ describe('jwks-utils', function() {
           secret: 'DEAD BEEF'
         });
 
-        return expect(jwku.jwkForSignature(sig, false))
+        return expect(jwku.jwkForSignature(sig, 'https://localhost:3000/jwks_uri'))
           .to.eventually.deep.equal(jwk);
       });
 
@@ -227,30 +258,33 @@ describe('jwks-utils', function() {
           secret: 'DEAD BEEF'
         });
 
-        return expect(jwku.jwkForSignature(sig, false))
+        return expect(jwku.jwkForSignature(sig, 'https://localhost:3000/jwks_uri'))
           .to.eventually.be.rejected;
       });
     });
 
     it('should work with jku from cache when jku fails after first get', () => {
-      return request.get('https://localhost:3000/reset_jwks_uri_dies_after_first_request')
+      const jku_that_dies = 'https://localhost:3000/jwks_uri_dies_after_first_request';
+      const resurrect_jku = 'https://localhost:3000/reset_jwks_uri_dies_after_first_request';
+
+      return request.get(resurrect_jku)
       .then(() => {
         const sig = jws.sign({
           header: {
             alg: 'HS256',
-            jku: 'https://localhost:3000/jwks_uri_dies_after_first_request',
+            jku: jku_that_dies,
             kid: jwk.kid
           },
           payload: 'FOO BAR',
           secret: 'DEAD BEEF'
         });
   
-        return jwku.jwkForSignature(sig, false)
+        return jwku.jwkForSignature(sig, jku_that_dies)
         .then(key => {
           // first request should be fine
           expect(key).to.deep.equal(jwk);
  
-          return jwku.jwkForSignature(sig, false);
+          return jwku.jwkForSignature(sig, jku_that_dies);
         }).then(key => expect(key).to.deep.equal(jwk));
       })
     });

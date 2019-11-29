@@ -101,7 +101,7 @@ describe('oada-certs#validate', function() {
 
   //--------------------------------------------------------------------
   describe('for valid but untrusted signature', function() {
-    it('should return trusted=false, valid=true', () => {
+    it('should return trusted=false, valid=false if signature uses jku to avoid pinging maliciously', () => {
       const sig = jwt.sign(payload, jwk2pem(privJwk), {
         algorithm: 'RS256',
         header: {
@@ -111,9 +111,23 @@ describe('oada-certs#validate', function() {
       });
       return check(sig).then(result => {
         expect(result.trusted).to.equal(false);
+        expect(result.valid).to.equal(false);
+      });
+    });
+
+    it('should return trusted=false, valid=true if signature uses valid jwk', () => {
+      const sig = jwt.sign(payload, jwk2pem(privJwk), {
+        algorithm: 'RS256',
+        header: {
+          jwk: pubJwk,
+        },
+      });
+      return check(sig).then(result => {
+        expect(result.trusted).to.equal(false);
         expect(result.valid).to.equal(true);
       });
     });
+
 
     it('should return the signature payload even though untrusted', () => {
       const sig = jwt.sign(payload, jwk2pem(privJwk), {

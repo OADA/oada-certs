@@ -58,6 +58,8 @@ const { trusted, clientcert, valid, details } = await oadacerts.validate(signed_
 // clientcert = JSON object that is the decoded client certicate
 // valid = true if cert was decodable with a correct signature
 // details = array of details about the validation process to help with debugging a cert
+// NOTE: if the certificate is untrusted, it cannot use a jku in the signature, 
+//    it must use a jwk to be considered valid.  This avoids fetching potentially malicious URL's.
 
 // Self-explanatory utilities for working with JWK key sets (jwks):
 oadacerts.jwksutils.isJWK(key)

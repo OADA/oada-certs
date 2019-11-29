@@ -132,6 +132,9 @@ utils.jwkForSignature = function jwkForSignature(sig, hint, options) {
     const checkJWKEqualsJoseJWK = jwk => {
       if (alreadyFinished) return; // nothing left to do, promise returned later after we already returned from cache
       alreadyFinished = true;
+      if (!jwk) {
+        throw new Error('There was no final JWK to check against the JOSE header.  Did you use a jku on an untrusted signature?');
+      }
       if (jose.jwk && !equal(jwk, jose.jwk, {strict: true})) {
         throw new Error('JWK did not match jwk JOSE header');
       }
@@ -259,10 +262,13 @@ utils.jwkForSignature = function jwkForSignature(sig, hint, options) {
         if (hint === false) {
           // Lookup soley based on JOSE headers
           if (jose.jku) {
-            trace('hint is boolean false, jose.jku exists, looking it up');
-            return getJWK(jose.jku);
+            warn('signature has a jku key, but it is untrusted and therefore ignored to avoid getting potentially malicious URIs.');
           }
-          trace('hint is boolean false, but no jku so using jwk on jose header');
+          if (!jose.jwk) {
+            warn('signature is untrusted and has no jwk key to check');
+            return checkJWKEqualsJoseJWK(false);
+          }
+          trace('hint is boolean false, but we do have a jwk in the header so we will check that.');
           // If no jku uri, then just use the jwk on the jose header as last resort
           return checkJWKEqualsJoseJWK(jose.jwk);
         }
