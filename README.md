@@ -44,7 +44,7 @@ const oadacerts = require('@oada/oada-certs');
 // If you don't pass a jku, it puts the public jwk for the
 // sign key into the JWT automatically
 try {
-  const signed_jwt_cert = oadacerts.generate(clientcert, signkey, { 
+  const signed_jwt_cert = oadacerts.generate(payload, signkey, { 
     jku: "https://url.to.some.jwkset", 
     kid: "someKeyidInThatSet"
   });
@@ -53,9 +53,9 @@ try {
 }
 
 // Returns a promise:
-const { trusted, clientcert, valid, details } = await oadacerts.validate(signed_jwt_cert);
+const { trusted, payload, valid, details } = await oadacerts.validate(signed_jwt_cert);
 // trusted = true if cert was signed by key on a trusted list
-// clientcert = JSON object that is the decoded client certicate
+// payload = JSON object that is the decoded client certicate
 // valid = true if cert was decodable with a correct signature
 // details = array of details about the validation process to help with debugging a cert
 // NOTE: if the certificate is untrusted, it cannot use a jku in the signature, 

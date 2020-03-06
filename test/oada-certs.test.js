@@ -95,7 +95,7 @@ describe('oada-certs#validate', function() {
     return check(sig).then(result => {
       expect(result.trusted).to.equal(false);
       expect(result.valid).to.equal(false);
-      expect(result.clientcert).to.deep.equal(payload);
+      expect(result.payload).to.deep.equal(payload);
     });
   });
 
@@ -138,7 +138,7 @@ describe('oada-certs#validate', function() {
         },
       });
       return check(sig).then(result => {
-        expect(result.clientcert).to.equal(payload);
+        expect(result.payload).to.equal(payload);
       });
     });
   });
@@ -168,13 +168,13 @@ describe('oada-certs#validate', function() {
         },
       });
       return check(sig).then(result => {
-        expect(result.clientcert).to.equal(payload);
+        expect(result.payload).to.equal(payload);
       });
     });
   });
 
   describe('for customizing set of trusted lists', function() {
-    it('should work for signature validation and be untrusted if no trusted lists exist', function() {
+    it('should work for signature validation and be untrusted if no trusted lists exist: trusted is false and valid is false because no jwk can be found', function() {
       const sig = jwt.sign(payload, jwk2pem(privJwk), {
         algorithm: 'RS256',
         header: {
@@ -185,10 +185,10 @@ describe('oada-certs#validate', function() {
       // Disable default trusted list, and don't supply any others:
       return check(sig, { disableDefaultTrustedListURI: true }).then(result => {
         expect(result.trusted).to.equal(false);
-        expect(result.valid).to.equal(true);
+        expect(result.valid).to.equal(false);
       });
     });
-    it('should work for customized trusted list that is down, returning false for trusted', function() {
+    it('should work for customized trusted list that is down, returning false for trusted and false for valid because no public key can be found', function() {
       const sig = jwt.sign(payload, jwk2pem(privJwk), {
         algorithm: 'RS256',
         header: {
@@ -203,7 +203,7 @@ describe('oada-certs#validate', function() {
         additionalTrustedListURIs: [ 'https://fakelist.is.down.and.never.will.return' ],
       }).then(result => {
         expect(result.trusted).to.equal(false);
-        expect(result.valid).to.equal(true);
+        expect(result.valid).to.equal(false);
       });
     });
     it('should work for customized trusted list that is up', function() {

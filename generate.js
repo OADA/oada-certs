@@ -1,12 +1,9 @@
 /*
- generate returns an object with key "software_statement" whose
- value is a string that is a JWT signed with the given key.
+ generate returns an encrypted JWT that represents the signed data.
 
  The result looks like this:
-   { software_statement: "dffji2ds.2f2309ijf234kf2l.2f823jhio" } 
+   dffji2ds.2f2309ijf234kf2l.2f823jhio
  that's just a random string, but in practice is a real JWT.
-
- The payload of the JWT is the clientcert itself.
 
  "key" can either be an object with a "pem" key, or a jwk that can be converted to a pem.
  If the signing key has a kid (i.e. a "key id"), it will be added to the resulting JWT headers
@@ -19,14 +16,14 @@
 
 const jwt = require('jsonwebtoken');
 const pemjwk = require('pem-jwk');
-const skeemas = require('skeemas');
-const clientcertSchema= require('./schemas/clientcert.json');
+//const skeemas = require('skeemas');
+//const clientcertSchema= require('./schemas/clientcert.json');
 const errors = require('./errors');
 const debug = require('debug');
 const  info = debug('oada-certs:info');
 const trace = debug('oada-certs:trace');
 
-function generate(clientcert, key, options) {
+function generate(payload, key, options) {
   options = options || { };
   if (!key) throw new errors.InvalidKeyException("You have to pass a valid JWK or an object with a pem key as the signing key");
   // You can pass the pem in the key itself, or you can pass a JWK as the key:
@@ -59,18 +56,22 @@ function generate(clientcert, key, options) {
     options.header.jwk = publicjwk;
   }
 
-  const result = skeemas.validate(clientcert, clientcertSchema);
-  if (!result.valid) {
-    throw new errors.InvalidFormatException(
-      'Unsigned clientcert does not match valid schema.  Cert was: '+JSON.stringify(clientcert, false, '  '),
-      result.errors
-    );
-  }
+  /* I am removing this schema test because this library should be capable of signing
+   * anything, not just an OADA client certificate.  For example, Trellis uses it to 
+   * sign a hash of arbitrary data.
+   * const result = skeemas.validate(payload, clientcertSchema);
+   * if (!result.valid) {
+   *   throw new errors.InvalidFormatException(
+   *     'Unsigned payload does not match valid schema.  Cert was: '+JSON.stringify(payload, false, '  '),
+   *     result.errors
+   *   );
+   * }
+  */
 
   try {
-    return jwt.sign(clientcert, pem, options);
+    return jwt.sign(payload, pem, options);
   } catch(e) {
-    trace('Failed to sign client cert, error was: ', e, ', clientcert = ', clientcert, ', pem = ', pem, ', options = ', options);
+    trace('Failed to sign payload, error was: ', e, ', payload = ', payload, ', pem = ', pem, ', options = ', options);
     throw new errors.SignatureFailedException('Unable to sign certificate with jsonwebtoken.sign()', [ e ]);
   }
 }

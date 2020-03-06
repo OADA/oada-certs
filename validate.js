@@ -31,7 +31,7 @@ var TRUSTED_LIST_URI = 'https://oada.github.io/oada-trusted-lists/client-registr
 // Returns: Promise.props({
 //   trusted: true | false, (valid and JWK/JKU+KID is in trusted list)
 //   valid: true | false, (signature is a valid signature regardless of trusted list status)
-//   clientcert: { ... }, (the actual decoded client certificate)
+//   payload: { ... }, (the actual decoded client certificate)
 //   details: [ ... ], (array of objects with "message" keys giving details on the validation results
 // })
 //
@@ -178,9 +178,9 @@ module.exports = function(sig, options) {
   }).then(({ decoded, trusted, jwk, details }) => {
     if (!decoded) {
       details.push({ message: 'Decoding failed for certificate' });
-      return { trusted: false, clientcert: false, valid: false, details };
+      return { trusted: false, payload: false, valid: false, details };
     }
-    const ret = { trusted, details, clientcert: decoded.payload };
+    const ret = { trusted, details, payload: decoded.payload };
     try { 
       ret.valid = !!(jwt.verify(sig, jwk2pem(jwk)));
     } catch(err) {
@@ -188,19 +188,19 @@ module.exports = function(sig, options) {
       ret.valid = false;
     }
     return Promise.props(ret);
-  }).then(({ details, trusted, clientcert, valid }) => {
+  }).then(({ details, trusted, payload, valid }) => {
     if (!valid) {
       details.push({ message: 'jwt.verify says it does not verify with the given JWK.  Setting valid = false, trusted = false.' });
       trusted = false;
     }
     
     // Made it all the way to the end! Return the results:
-    return { trusted, details, clientcert, valid };
+    return { trusted, details, payload, valid };
 
   }).catch(err => {
     info('Uncaught error in oadacerts.validate. err was: ', err);
     details.push({ message: 'Uncaught error in oadacerts.validate.  err was: ' + JSON.stringify(err,false,'  ')});
-    return { trusted: false, clientcert: false, valid: false, details };
+    return { trusted: false, payload: false, valid: false, details };
   });
 
 };

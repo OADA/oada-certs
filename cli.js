@@ -47,10 +47,10 @@ if (argv.validate) {
   }
   // Now validate the JWT:
   return oadacerts.validate(signedcert)
-  .then(({clientcert,trusted,valid,details}) => {
+  .then(({payload,trusted,valid,details}) => {
     console.log('trusted: ', trusted);
     console.log('valid: ', valid);
-    console.log('decoded client cert: ', clientcert);
+    console.log('decoded payload: ', payload);
     console.log('details on validation: ', details);
   });
 }
