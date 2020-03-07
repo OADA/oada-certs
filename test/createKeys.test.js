@@ -15,17 +15,20 @@
 
 'use strict';
 
+const _ = require('lodash');
 const chai = require('chai');
-chai.use(require('chai-as-promised'));
+const chaiAsPromised = require('chai-as-promised');
+chai.use(chaiAsPromised);
+const Promise = require('bluebird');
 const expect = chai.expect;
 
-const mut = require('../generate');
+// The module to be "checked" (i.e. under test)
+const createKey = require('../createKey');
 
-describe('oada-certs#generate', function() {
-
-    // This is probably a useless test
-    it('should be exported', function() {
-        //expect(oauthDynRegMetadata).to.be.ok;
-        expect(mut).to.be.ok;
-    });
+describe('oada-certs#createKey', () => {
+  it('should create a public and private key', async () => {
+    const k = await createKey();
+    expect(k.public).to.be.an('object');
+    expect(k.private).to.be.an('object');
+  });
 });

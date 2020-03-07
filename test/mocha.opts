@@ -1,5 +1,5 @@
 --reporter spec
 --ui bdd
---timeout 200
+--timeout 500
 --require ./test/setup.js
 ./test/**/*.test.js

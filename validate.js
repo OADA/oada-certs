@@ -18,9 +18,7 @@
 const Promise = require('bluebird');
 const request = Promise.promisifyAll(require('superagent'));
 const jwku = require('./jwks-utils');
-const jws = require('jws');
-const jwt = require('jsonwebtoken');
-const jwk2pem = require('pem-jwk').jwk2pem;
+const jose = require('node-jose');
 const debug = require('debug');
 const warn  = debug('oada-certs#validate:warn');
 const info  = debug('oada-certs#validate:info');
@@ -100,15 +98,15 @@ module.exports = function(sig, options) {
     const details = [];
 
     trace('List caching section finished, lists = ', lists);
-    // jws.decode throws if the signature is invalid
+    // jwku.decodeWithoutVerify throws if the signature is invalid
     try {
-      var decoded = jws.decode(sig);
+      var decoded = jwku.decodeWithoutVerify(sig);
     } catch(err) {
-      details.push({ message: 'Could not decode signature with jws.decode: '+JSON.stringify(err,false,'  ') });
+      details.push({ message: 'Could not decode signature with jwku.decodeWithoutVerify: '+JSON.stringify(err,false,'  ') });
       decoded = false;
     }
     if (!decoded || !decoded.header) {
-      trace('decoded signature is null or has no header.');
+      trace('decoded signature is null or has no header. decoded = ', decoded);
       return { decoded: false, trusted: false, jwk: false, details };
     }
     trace('Tried decoding the signature, resulting in decoded = ', decoded);
@@ -175,14 +173,14 @@ module.exports = function(sig, options) {
     });
 
   // Now we can go ahead and verify the signature with the jwk:
-  }).then(({ decoded, trusted, jwk, details }) => {
+  }).then(async ({ decoded, trusted, jwk, details }) => {
     if (!decoded) {
       details.push({ message: 'Decoding failed for certificate' });
       return { trusted: false, payload: false, valid: false, details };
     }
     const ret = { trusted, details, payload: decoded.payload };
     try { 
-      ret.valid = !!(jwt.verify(sig, jwk2pem(jwk)));
+      ret.valid = !!(await jose.JWS.createVerify(await jose.JWK.asKey(jwk)).verify(sig)) // actually returns an object with header, payload, protected, key
     } catch(err) {
       details.push({ message: 'Failed to verify JWT signature with public key.  jwt.verify said: '+JSON.stringify(err,false,'  ') });
       ret.valid = false;

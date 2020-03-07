@@ -16,7 +16,7 @@
 'use strict';
 
 const url = require('url');
-const jws = require('jws');
+const jose = require('node-jose');
 const equal = require('deep-equal');
 const Promise = require('bluebird');
 
@@ -118,12 +118,33 @@ utils.findJWK = function findJWK(kid, jwks) {
   return res;
 };
 
+utils.decodeWithoutVerify = function(jwt) {
+  const parts = jwt.split('.');
+  trace('decodeWithoutVerify: parts before decoding = ', parts);
+  let header = jose.util.base64url.decode(parts[0]).toString();
+  let payload = jose.util.base64url.decode(parts[1]).toString();
+  const signature = parts[2];
+  try {
+    header = JSON.parse(header)
+  } catch(err) {
+    throw new Error('Could not JSON.parse decoded header.  Header string is: '+header+', error was: '+err.toString());
+  }
+  try {
+    payload = JSON.parse(payload);
+  } catch(err) {
+    warn('Could not JSON.parse payload, assuming it is a string to be left alone.  Payload string is: '+payload+', error was: '+err.toString());
+  }
+
+  trace('decodeWithoutVerify: decoded header = ', header, ', payload = ', payload, ', signature = ', signature);
+  return { header, payload, signature };
+}
+
 // Supported headers: [kid, jwk, jku]
 utils.jwkForSignature = function jwkForSignature(sig, hint, options) {
   return Promise.try(() => {
     options = options || {};
 
-    const jose = jws.decode(sig).header;
+    const header = utils.decodeWithoutVerify(sig).header;
 
     // The only place the callback is allowed to be called is inside this 
     // checkJWKEqualsJoseJWK.  That way it's easier to manage the two threads
@@ -135,7 +156,7 @@ utils.jwkForSignature = function jwkForSignature(sig, hint, options) {
       if (!jwk) {
         throw new Error('There was no final JWK to check against the JOSE header.  Did you use a jku on an untrusted signature?');
       }
-      if (jose.jwk && !equal(jwk, jose.jwk, {strict: true})) {
+      if (header.jwk && !equal(jwk, header.jwk, {strict: true})) {
         throw new Error('JWK did not match jwk JOSE header');
       }
       trace('checkJWKEqualsJoseJWK: succesfully returning jwk = ', jwk);
@@ -216,8 +237,8 @@ utils.jwkForSignature = function jwkForSignature(sig, hint, options) {
           // And finally, if we got to this point, we either did not have an error, or we had an error but 
           // we decided to use our cached value.  Either way, the jwks variable now has a valid jwks in it.
           // This ends the thread that runs after the web request finishes.
-          trace('Finished with request path, looking for jose.kid (',jose.kid,') in retrieved jwks:', jwks);
-          return checkJWKEqualsJoseJWK(utils.findJWK(jose.kid, jwks));
+          trace('Finished with request path, looking for header.kid (',header.kid,') in retrieved jwks:', jwks);
+          return checkJWKEqualsJoseJWK(utils.findJWK(header.kid, jwks));
         });
   
         // Now, check if we already have the uri in the cache and 
@@ -225,7 +246,7 @@ utils.jwkForSignature = function jwkForSignature(sig, hint, options) {
         trace('Checking cache for non-stale uri ', uri);
         if (cacheHasURIThatIsNotStale(uri)) {
           trace('Found uri ',uri,' in cache and it is not stale, returning it immediately');
-          const jwk = utils.findJWK(jose.kid, jwksCache[uri].jwks);
+          const jwk = utils.findJWK(header.kid, jwksCache[uri].jwks);
           if (jwk) return checkJWKEqualsJoseJWK(jwk);
         }
         trace('Did not find non-stale uri ',uri,' in cache, waiting on request to complete instead');
@@ -261,16 +282,16 @@ utils.jwkForSignature = function jwkForSignature(sig, hint, options) {
       case 'boolean':
         if (hint === false) {
           // Lookup soley based on JOSE headers
-          if (jose.jku) {
+          if (header.jku) {
             warn('signature has a jku key, but it is untrusted and therefore ignored to avoid getting potentially malicious URIs.');
           }
-          if (!jose.jwk) {
+          if (!header.jwk) {
             warn('signature is untrusted and has no jwk key to check');
             return checkJWKEqualsJoseJWK(false);
           }
           trace('hint is boolean false, but we do have a jwk in the header so we will check that.');
           // If no jku uri, then just use the jwk on the jose header as last resort
-          return checkJWKEqualsJoseJWK(jose.jwk);
+          return checkJWKEqualsJoseJWK(header.jwk);
         }
       break;
       case 'string':
@@ -280,9 +301,9 @@ utils.jwkForSignature = function jwkForSignature(sig, hint, options) {
       case 'object':
         if (utils.isJWKset(hint)) {
           trace('hint is object, looks like jwk set, checking that');
-          return checkJWKEqualsJoseJWK(utils.findJWK(jose.kid, hint));
+          return checkJWKEqualsJoseJWK(utils.findJWK(header.kid, hint));
         } 
-        if (utils.isJWK(hint) && jose.kid === hint.kid) {
+        if (utils.isJWK(hint) && header.kid === hint.kid) {
           trace('hint is object, looks like jwk w/ same kid, checking');
           return checkJWKEqualsJoseJWK(hint);
         }

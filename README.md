@@ -44,7 +44,7 @@ const oadacerts = require('@oada/oada-certs');
 // If you don't pass a jku, it puts the public jwk for the
 // sign key into the JWT automatically
 try {
-  const signed_jwt_cert = oadacerts.generate(payload, signkey, { 
+  const signed_jwt_cert = oadacerts.sign(payload, signkey, { 
     jku: "https://url.to.some.jwkset", 
     kid: "someKeyidInThatSet"
   });

@@ -7,7 +7,6 @@ const pemjwk = require('pem-jwk');
 const fs = require('fs');
 const Promise = require('bluebird');
 const fsp = Promise.promisifyAll(fs);
-const execa = require('execa');
 const argv = minimist(process.argv.slice(2));
 const debug = require('debug');
 const error = debug('oada-certs:error');
@@ -62,7 +61,7 @@ if (argv.validate) {
 //   creates ./public_key.pem
 //           ./private_key.pem
 //           ./public_key.jwk
-//   --force-creation will remove pre-existing key files
+//   --force will remove pre-existing key files
 if (argv["create-keys"]) {
   if(argv.force) {
     console.log('You asked for --force, removing key files');
@@ -77,30 +76,26 @@ if (argv["create-keys"]) {
 
   console.log('Creating keys ./private_key.pem and ./public_key.pem...');
   if (fs.existsSync('./private_key.pem')) {
-    throw new Error('ERROR: ./private_key.pem already exists, refusing to overwrite.  force with --force-creation');
+    throw new Error('ERROR: ./private_key.pem already exists, refusing to overwrite.  force with --force');
   }
   if (fs.existsSync('./public_key.pem')) {
-    throw new Error('ERROR: ./public_key.pem already exists, refusing to overwrite.  force with --force-creation');
+    throw new Error('ERROR: ./public_key.pem already exists, refusing to overwrite.  force with --force');
   }
   if (fs.existsSync('./public_key.jwk')) {
-    throw new Error('ERROR: ./public_key.jwk already exists, refusing to overwrite.  force with --force-creation');
+    throw new Error('ERROR: ./public_key.jwk already exists, refusing to overwrite.  force with --force');
   }
-  console.log('openssl genrsa -out private_key.pem 2048');
-  return execa('openssl', ['genrsa', '-out', 'private_key.pem', '2048'])
+  console.log('You could use "openssl genrsa -out private_key.pem 2048" to sign keys, but this will use built-in library');
+  return oadacerts.createKey()
   .then(result => {
-    console.log('Private key created.  openssl said: ', result.stdout);
-    console.log('Extracting public key...');
-    return execa('openssl', ['rsa', '-pubout', '-in', 'private_key.pem', '-out', 'public_key.pem']);
+    console.log('Keys created, converting to PEM and writing output');
+    return Promise.all([
+      fsp.writeFileAsync('./public_key.pem', pemjwk.jwk2pem(result.public)),
+      fsp.writeFileAsync('./private_key.pem', pemjwk.jwk2pem(result.private)),
+      fsp.writeFileAsync('./public_key.jwk', JSON.stringify(result.public)),
+    ]);
   }).then(result => {
-    console.log('Done extracting public key.  openssl said: ', result.stdout);
-    console.log('Creating jwk from public key');
-    const pubkeypem = fs.readFileSync('./public_key.pem').toString();
-    const jwk = pemjwk.pem2jwk(pubkeypem);
-    // assign the jwk a random keyid (kid):
-    jwk.kid = uuid().replace(/-/g,''); // get rid of the dashes
-    fs.writeFileSync('./public_key.jwk', JSON.stringify(jwk));
-    console.log('Done creating ./public_key.jwk');
-    console.log('IMPORTANT: for now, you have to put this jwk into your unsigned_clientcert.js manually as your signing key for OAuth2 requests');
+    console.log('Done creating ./public_key.pem, ./private_key.pem, and ./public_key.jwk');
+    console.log('IMPORTANT: for now, you have to put the jwk from ./public_key.jwk into your unsigned_clientcert.js manually as your signing key for OAuth2 requests');
   });
   // done here.
 }
@@ -152,7 +147,7 @@ if (argv.signkid) options.header.kid = argv.signkid;
 
 
 // Generate the signed version of the client cert:
-const signedcert = oadacerts.generate(unsignedcert, signkey, options);
+const signedcert = oadacerts.sign(unsignedcert, signkey, options);
 
 // Write to file:
 fs.writeFileSync('./signed_software_statement.js', "module.exports = "+JSON.stringify(signedcert)+";");
