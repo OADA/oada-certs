@@ -89,7 +89,7 @@ async function sign(payload, key, options) {
   try {
     return await jose.JWS.createSign({format: 'compact'},{ key: privatejwk, header: options.header }).update(payload).final();
   } catch(e) {
-    trace('Failed to sign payload, error was: ', e, ', payload = ', payload, ', pem = ', pem, ', options = ', options);
+    trace('Failed to sign payload, error was: ', e, ', payload = ', payload, ', key = ', key, ', options = ', options);
     throw new errors.SignatureFailedException('Unable to sign certificate with jose.JWS.createSign().update().final()', [ e ]);
   }
 }
