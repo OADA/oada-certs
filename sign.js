@@ -32,11 +32,12 @@ async function sign(payload, key, options) {
   //if (key.kid) privatejwk.kid = key.kid; // maintain kid from original if passed
   // options.header.kid can override the one in the private key:
   if (options.header && options.header.kid) {
-    trace('sign: Setting kid in to options.header.kid value of ', options.header.kid);
+    trace('sign: Setting kid in private key to options.header.kid value of ', options.header.kid);
     const json = privatejwk.toJSON(true);
     json.kid = options.header.kid;
     privatejwk = await jose.JWK.asKey(json);
   }
+  trace('sign: kid on privatejwk = ', privatejwk.kid);
 
   // Public only keeps kty, n, and e.  If kid is there, keep the key id too
   const publicjwk = privatejwk.toJSON(); // without a parameter, this returns the public key
@@ -48,9 +49,9 @@ async function sign(payload, key, options) {
   options.header.alg = options.header.alg || 'RS256';
 
   // If there is a kid on the key ("key id"), it will be kept in the JWT
-  if (key.kid) {
-    trace('key has a kid (',key.kid,'), putting in header');
-    options.header.kid = key.kid;
+  if (privatejwk.kid) {
+    trace('key has a kid (',privatejwk.kid,'), putting in header');
+    options.header.kid = privatejwk.kid;
   }
 
   // There is some wonkiness when the payload is just a regular string.  It seems

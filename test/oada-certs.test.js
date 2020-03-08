@@ -78,6 +78,19 @@ describe('oada-certs', function() {
       expect(header.jku).to.equal(jku);
       expect(header.kid).to.equal(kid);
     });
+
+    it('should override the kid on a jwk if we pass one in the header', async () => {
+      const jku = 'https://some.url';
+      const kid = 'nottherealkid';
+      const jwk = _.cloneDeep(pubJwk);
+      jwk.kid = kid;
+      const sig = await sign(testpayload, key, { header: { jku, kid } });
+      const {header, payload, signature} = await jose.JWS.createVerify(pubKey).verify(sig);
+      expect(header.jwk).to.deep.equal(jwk);
+      expect(header.jku).to.equal(jku);
+      expect(header.kid).to.equal(kid);
+    });
+
   });
   
   
