@@ -64,6 +64,10 @@ async function sign(payload, key, options) {
       payload = JSON.stringify(payload);
     }
   }
+  // The sign function will only sign strings, so if we have an object, we have to stringify it
+  if (typeof payload === 'object') {
+    payload = JSON.stringify(payload);
+  }
 
   // We need to save the jwk in the header so that it can be validated even if the trusted list
   // is not available.  i.e. you should put

@@ -53,11 +53,6 @@ describe('oada-certs', function() {
   describe('oada-certs#sign', function() {
     const testpayload = 'DEAD BEEF';
     const key = _.cloneDeep(privJwk);
-    it('should not throw when creating a signature with no options', async () => {
-      const sig = await sign(testpayload, key);
-      expect(typeof sig).to.equal('string');
-      expect(sig).to.have.lengthOf.above(0);
-    });
     it('should create a signature that verifies successfully with jose.JWS', async () => {
       const sig = await sign(testpayload, key);
       const {header, payload, signature} = await jose.JWS.createVerify(pubKey).verify(sig);
@@ -65,6 +60,15 @@ describe('oada-certs', function() {
       // payload from jose.JWS is a buffer, have to convert to string, then JSON.parse to get back to original because sign() stringifies it
       expect(testpayload).to.equal(JSON.parse(payload.toString()));
     });
+    it('should create a signature that verifies successfully with jose.JWS using an object as a payload', async () => {
+      const pld = { key1: testpayload };
+      const sig = await sign(pld, key);
+      const {header, payload, signature} = await jose.JWS.createVerify(pubKey).verify(sig);
+      expect(header.jwk).to.deep.equal(pubJwk);
+      // payload from jose.JWS is a buffer, have to convert to string, then JSON.parse to get back to original because sign() stringifies it
+      expect(pld).to.deep.equal(JSON.parse(payload.toString()));
+    });
+
     it('should create a signature that includes the jwk in the header even if there is a jku', async () => {
       const jku = 'https://some.url';
       const kid = pubJwk.kid;
@@ -211,7 +215,6 @@ describe('oada-certs', function() {
   
       it('should return the signature payload', async function() {
         const sig = await sign(payload, privJwk, {
-          algorithm: 'RS256',
           header: {
             kid: privJwk.kid,
             jku: TEST_ROOT,
@@ -219,6 +222,19 @@ describe('oada-certs', function() {
         });
         return validate(sig).then(result => {
           expect(result.payload).to.equal(payload);
+        });
+      });
+
+      it('should return a matching signature payload for an object payload', async function() {
+        const pld = { key1: payload };
+        const sig = await sign(pld, privJwk, {
+          header: {
+            kid: privJwk.kid,
+            jku: TEST_ROOT,
+          },
+        });
+        return validate(sig).then(result => {
+          expect(result.payload).to.deep.equal(pld);
         });
       });
     });
