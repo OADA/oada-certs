@@ -6,5 +6,5 @@ module.exports = {
   // Handy JWK utilities like jwkForSignature and decodeWithoutVerify
   jwksutils: require('./jwks-utils'),
   // Wrapper for node-jose to create an RSA public/private keypair for you (2048 bit key length)
-  createKey: require('./createKey'),
+  keys: require('./keys'),
 }
