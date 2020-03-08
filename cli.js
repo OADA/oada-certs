@@ -78,6 +78,9 @@ if (argv["create-keys"]) {
   if (fs.existsSync('./private_key.pem')) {
     throw new Error('ERROR: ./private_key.pem already exists, refusing to overwrite.  force with --force');
   }
+  if (fs.existsSync('./private_key.jwk')) {
+    throw new Error('ERROR: ./private_key.jwk already exists, refusing to overwrite.  force with --force');
+  }
   if (fs.existsSync('./public_key.pem')) {
     throw new Error('ERROR: ./public_key.pem already exists, refusing to overwrite.  force with --force');
   }
@@ -90,11 +93,12 @@ if (argv["create-keys"]) {
     console.log('Keys created, converting to PEM and writing output');
     return Promise.all([
       fsp.writeFileAsync('./public_key.pem', pemjwk.jwk2pem(result.public)),
-      fsp.writeFileAsync('./private_key.pem', pemjwk.jwk2pem(result.private)),
       fsp.writeFileAsync('./public_key.jwk', JSON.stringify(result.public)),
+      fsp.writeFileAsync('./private_key.pem', pemjwk.jwk2pem(result.private)),
+      fsp.writeFileAsync('./private_key.jwk', JSON.stringify(result.private)),
     ]);
   }).then(result => {
-    console.log('Done creating ./public_key.pem, ./private_key.pem, and ./public_key.jwk');
+    console.log('Done creating ./public_key.pem, ./private_key.pem, ./public_key.jwk, and ./private_key.jwk');
     console.log('IMPORTANT: for now, you have to put the jwk from ./public_key.jwk into your unsigned_clientcert.js manually as your signing key for OAuth2 requests');
   });
   // done here.
