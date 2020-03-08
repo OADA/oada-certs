@@ -136,7 +136,7 @@ describe('oada-certs', function() {
         expect(result.payload).to.deep.equal(payload);
       });
     });
-  
+
     //--------------------------------------------------------------------
     describe('for valid but untrusted signature', async function() {
       it('should return trusted=false, valid=true if signature uses jku (but does have JWK in its headers) to avoid pinging maliciously', async () => {
@@ -192,7 +192,7 @@ describe('oada-certs', function() {
   
     //--------------------------------------------------------------------
     describe('for valid trusted signature', function() {
-      it('should return trusted=true, valid=true', async () => {
+      it('should return trusted=true, valid=true, header, payload', async () => {
         const sig = await sign(payload, privJwk, {
           header: {
             kid: privJwk.kid,
@@ -202,6 +202,10 @@ describe('oada-certs', function() {
         return validate(sig).then(result => {
           expect(result.trusted).to.equal(true);
           expect(result.valid).to.equal(true);
+          expect(result.payload).to.deep.equal(payload);
+          expect(result.header).to.be.an('object');
+          expect(result.header.kid).to.equal(privJwk.kid);
+          expect(result.header.jku).to.equal(TEST_ROOT);
         });
       });
   

@@ -176,9 +176,9 @@ module.exports = function(sig, options) {
   }).then(async ({ decoded, trusted, jwk, details }) => {
     if (!decoded) {
       details.push({ message: 'Decoding failed for certificate' });
-      return { trusted: false, payload: false, valid: false, details };
+      return { trusted: false, payload: false, valid: false, header: false, details };
     }
-    const ret = { trusted, details, payload: decoded.payload };
+    const ret = { trusted, details, payload: decoded.payload, header: decoded.header };
     try { 
       ret.valid = !!(await jose.JWS.createVerify(await jose.JWK.asKey(jwk)).verify(sig)) // actually returns an object with header, payload, protected, key
     } catch(err) {
@@ -186,19 +186,19 @@ module.exports = function(sig, options) {
       ret.valid = false;
     }
     return Promise.props(ret);
-  }).then(({ details, trusted, payload, valid }) => {
+  }).then(({ details, trusted, payload, valid, header }) => {
     if (!valid) {
       details.push({ message: 'jwt.verify says it does not verify with the given JWK.  Setting valid = false, trusted = false.' });
       trusted = false;
     }
     
     // Made it all the way to the end! Return the results:
-    return { trusted, details, payload, valid };
+    return { trusted, details, payload, valid, header };
 
   }).catch(err => {
     info('Uncaught error in oadacerts.validate. err was: ', err);
     details.push({ message: 'Uncaught error in oadacerts.validate.  err was: ' + JSON.stringify(err,false,'  ')});
-    return { trusted: false, payload: false, valid: false, details };
+    return { trusted: false, payload: false, valid: false, header: false, details };
   });
 
 };
