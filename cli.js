@@ -88,7 +88,7 @@ if (argv["create-keys"]) {
     throw new Error('ERROR: ./public_key.jwk already exists, refusing to overwrite.  force with --force');
   }
   console.log('You could use "openssl genrsa -out private_key.pem 2048" to sign keys, but this will use built-in library');
-  return oadacerts.createKey()
+  return oadacerts.keys.create()
   .then(result => {
     console.log('Keys created, converting to PEM and writing output');
     return Promise.all([
