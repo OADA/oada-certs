@@ -145,7 +145,7 @@ try {
 //             for which key in the set
 //   option 2: public key is to be included in the signature itself.  Do not pass a jku,
 //             and the public jwk will be added to the resulting JWT header automatically.
-const options = {};
+const options = { header: {} };
 if (argv.signjku) options.header.jku = argv.signjku;
 if (argv.signkid) options.header.kid = argv.signkid;
 
