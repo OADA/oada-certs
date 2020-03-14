@@ -28,7 +28,13 @@ async function sign(payload, key, options) {
   if (typeof key === 'string') {
     key = { pem : key }; // passed the key as a regular pem string instead of object like a jwk
   }
-  let privatejwk = await jose.JWK.asKey(key);
+  // asKey needs the key to be just the pem string if it's a pem 
+  let privatejwk = null;
+  if (key.pem) {
+    privatejwk = await jose.JWK.asKey(key.pem, 'pem');
+  } else { // regular JWK:
+    privatejwk = await jose.JWK.asKey(key);
+  }
   //if (key.kid) privatejwk.kid = key.kid; // maintain kid from original if passed
   // options.header.kid can override the one in the private key:
   if (options.header && options.header.kid) {
