@@ -1,5 +1,6 @@
 #! /usr/bin/env node
 
+(async () => {
 const inquirer = require('inquirer');
 const minimist = require('minimist');
 const uuid = require('uuid/v4');
@@ -151,11 +152,11 @@ if (argv.signkid) options.header.kid = argv.signkid;
 
 
 // Generate the signed version of the client cert:
-const signedcert = oadacerts.sign(unsignedcert, signkey, options);
+const signedcert = await oadacerts.sign(unsignedcert, signkey, options);
 
 // Write to file:
 fs.writeFileSync('./signed_software_statement.js', "module.exports = "+JSON.stringify(signedcert)+";");
 
 console.log('Wrote JWT to ./signed_software_statement.js');
 
-
+})()
