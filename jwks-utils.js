@@ -151,12 +151,15 @@ utils.jwkForSignature = function jwkForSignature(sig, hint, options) {
     // to make sure we don't call the callback twice.
     let alreadyFinished = false;
     const checkJWKEqualsJoseJWK = jwk => {
+      trace('checkJWKEqualsJoseJWK: started function, alreadyFinished = ', alreadyFinished, ', jwk = ', jwk);
       if (alreadyFinished) return; // nothing left to do, promise returned later after we already returned from cache
       alreadyFinished = true;
       if (!jwk) {
+        warn('jwk is falsey: there was no final JWK to check against the JOSE header.  Did you use a jku on an untrusted signature?');
         throw new Error('There was no final JWK to check against the JOSE header.  Did you use a jku on an untrusted signature?');
       }
       if (header.jwk && !equal(jwk, header.jwk, {strict: true})) {
+        warn('header.jwk (',header.jwk,') did not match jwk (', jwk, ')');
         throw new Error('JWK did not match jwk JOSE header');
       }
       trace('checkJWKEqualsJoseJWK: succesfully returning jwk = ', jwk);
@@ -258,7 +261,7 @@ utils.jwkForSignature = function jwkForSignature(sig, hint, options) {
       });
     }; // end getJWK function
 
-
+trace('XXXXXX HERE!!!!!!');
     // Now we can do the main part of the function which checks the hint and then calls one of
     // the functions above....
   
