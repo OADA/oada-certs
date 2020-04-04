@@ -44,7 +44,7 @@ const oadacerts = require('@oada/oada-certs');
 // If you don't pass a jku, it puts the public jwk for the
 // sign key into the JWT automatically
 try {
-  const signed_jwt_cert = oadacerts.sign(payload, signkey, { 
+  const signed_jwt_cert = await oadacerts.sign(payload, signkey, { 
     jku: "https://url.to.some.jwkset", 
     kid: "someKeyidInThatSet"
   });
@@ -87,4 +87,66 @@ oadacerts.jwksutils.findJWK(kid, jwks)
 const jwk = oadacerts.jwksutils.jwkForSignature(jwt, hint, { timeout: 1000 })
 ```
 
+## API
 
+### _async_ `sign(payload, key, options)`
+Generates a JWT with the given payload, signed with the given key.  Key should be a JWK, but it can also be a PEM string.
+* `payload` _required_: The JSON payload to sign in the JWT.
+* `key` _required_: JWK private key to sign with.  If this is a string instead of a JWK, it is assumed to be a PEM string.
+* `options` _optional_: If you need to specify a given `kid` (key id) and `jku` (JWK set URL) because your key is
+trusted, you can pass them here in `options.header`.  `options.header` is passed to `jose.JWS.createSign`.
+
+### _async_ `validate(signature, options)`
+* `sig` _required_: the signed JWT to validate
+* `options` _optional_: 
+** `options.timeout` (default: 1000 ms): How long to wait on remote URL requests.
+** `options.trustedListCacheTime` (default: 3600 sec): How long to use immediately use the cached value for the trusted list before
+                                                       waiting on the request to finish.
+** `options.additionalTrustedListURIs`: Any additional URL's (array of strings) to include in the search for a trusted key.
+** `options.disableDefaultTrustedListURI`: Only use the additionalTrustedListURI's, not the default one.
+
+Returns `{ trusted, payload, valid, header, details }`
+* `trusted`: `true|false`: true if signing key was on the trusted list
+* `payload`: the decoded payload
+* `valid`: `true|false`: true if the JWT was a valid JWT and the signature matched, says nothing about whether it was trusted.
+* `details`: array of strings about the validation process that can be helpful for debugging.
+
+### `validate.TRUSTED_LIST_URI`
+Exports the core `TRUSTED_LIST_URI` string for convenience as a property on the validate function.
+
+### `validate.clearCache()`
+Mainly for testing, you can clear the internal in-memory cache for all trusted lists with this function.
+
+### `jwksutils.isJWKSet(set)`
+Return `true` if `set` looks like a JWK set (`jwks`)
+
+### `jwksutils.isJWK(key)`
+Return `true` if `key` looks like a `jwk`.
+
+### `jwksutils.findJWK(kid, jwks)`
+Search for the given `kid` (key id) in the `jwks` (JWK set)
+
+### `jwksutils.decodeWithoutVerify(jwt)`
+Given a JWT, decode the header, payload, and signature without verifying them.
+Returns `{ header, payload, signature }`
+
+### _async_ `jwksutils.jwkForSignature(jwt, hint, options)`
+Returns to you the JWK necessary to validate a given JWT.  Described above in detail in the javascript example.
+
+### `jwksutils.clearJWKSCache()`
+Mainly for testing, clear the internal JWK key cache (i.e. previous `jku`-based keys that it has looked up).  This is not the trusted list cache.
+
+### `jwksutils.getJWKSCache()`
+Returns the JWK cache to you if you want to see it.  Mainly for testing.
+
+### `jwksutils.cachePruneOldest()`
+ Eliminates the oldest entry from the JWK cache.  Mainly for testing.
+ 
+### _async_ `keys.create()`
+Returns `{ public, private }`.  Both are JWK's.  You can use `private` to sign things.
+ 
+### _async_ `keys.pubFromPriv(priv)`
+Given a private JWK, return the corresponding public key as a JWK.
+ 
+### `jose`
+Exports the internally-used `node-jose` module for convenience.
