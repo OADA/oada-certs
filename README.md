@@ -1,6 +1,6 @@
 # oada-certs #
 
-Use this to create/sign/interact with OADA developer certificates.
+Use this to create/sign/interact with OADA developer certificates and any other keys or signatures in the OADA and Trellis ecosystems.
 
 ## Installation ##
 ```shell
