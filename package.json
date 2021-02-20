@@ -1,7 +1,7 @@
 {
   "name": "@oada/oada-certs",
   "bin": "./cli.js",
-  "version": "3.1.7",
+  "version": "3.1.8",
   "description": "Generate and verify JWT signatures (oauth dynamic client registration certificates and Trellis document integrity signatures)  in the Open Ag Data Alliance (OADA) and Trellis ecosystems",
   "main": "index.js",
   "scripts": {
@@ -29,16 +29,13 @@
   "homepage": "https://github.com/OADA/oada-certs",
   "dependencies": {
     "bluebird": "^3.7.1",
+    "clone-deep": "^4.0.1",
     "debug": "^4.1.1",
     "deep-equal": "^2.0.5",
-    "jsck": "^0.3.2",
-    "lodash": "^4.17.15",
     "minimist": "^1.2.2",
     "node-jose": "^2.0.0",
     "pem-jwk": "^2.0.0",
-    "skeemas": "^1.2.5",
     "superagent": "^6.1.0",
-    "url": "^0.11.0",
     "uuid": "^8.3.2"
   },
   "devDependencies": {
