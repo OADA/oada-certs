@@ -107,7 +107,7 @@ describe('oada-certs', function () {
         beforeEach(function mockList() {
             const uri = url.parse(validate.TRUSTED_LIST_URI);
             nock(url.format({ protocol: uri.protocol, host: uri.host }))
-                .log(log)
+                //.log(log)
                 .get(uri.path)
                 .reply(200, {
                     version: '2',
@@ -123,7 +123,7 @@ describe('oada-certs', function () {
                     host: custom_uri.host,
                 })
             )
-                .log(log)
+                //.log(log)
                 .get(custom_uri.path)
                 .reply(200, {
                     version: '2',
@@ -137,7 +137,7 @@ describe('oada-certs', function () {
         beforeEach(function mockJWKS() {
             // Setup the correct "trusted" one that's in mocked trusted list above:
             nock(TEST_ROOT)
-                .log(log)
+                //.log(log)
                 //.filteringPath(function() { return '/'; })
 
                 // For the root, it's in the trusted list:
