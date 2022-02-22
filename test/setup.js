@@ -1,4 +1,6 @@
-/* Copyright 2014 Open Ag Data Alliance
+/**
+ * @license
+ * Copyright 2014 Open Ag Data Alliance
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +15,6 @@
  * limitations under the License.
  */
 
-'use strict';
-
 const fs = require('fs');
 const express = require('express');
 const https = require('https');
@@ -26,43 +26,44 @@ const app = express();
 
 app.use(cors());
 
-app.get('/jwks_uri', function(req, res) {
-    res.json(jwkSet);
+app.get('/jwks_uri', (request, res) => {
+  res.json(jwkSet);
 });
 
-app.get('/jwks_uri_broken', function(req, res) {
-    res.send('');
+app.get('/jwks_uri_broken', (request, res) => {
+  res.send('');
 });
 
-app.get('/jwks_uri_invalid', function(req, res) {
-    res.json({});
+app.get('/jwks_uri_invalid', (request, res) => {
+  res.json({});
 });
 
-app.get('/jwks_uri_slow', function() {
-    // Never responds, only test using timeouts on the request side
+app.get('/jwks_uri_slow', () => {
+  // Never responds, only test using timeouts on the request side
 });
 
 // For testing cache failures:
 let isdead = false;
-app.get('/jwks_uri_dies_after_first_request', function(req,res) {
+app.get('/jwks_uri_dies_after_first_request', (request, res) => {
   if (isdead) {
     res.status(404).send('Not Found');
     return;
   }
+
   isdead = true;
   res.json(jwkSet);
 });
-app.get('/reset_jwks_uri_dies_after_first_request', function(req,res) {
+app.get('/reset_jwks_uri_dies_after_first_request', (request, res) => {
   isdead = false;
   res.json({});
 });
 
 const options = {
-    key: fs.readFileSync('./test/server.key', 'utf8'),
-    cert: fs.readFileSync('./test/server.crt', 'utf8'),
-    ca: fs.readFileSync('./test/ca.crt', 'utf8'),
-    requestCrt: true,
-    rejectUnauthorized: false
+  key: fs.readFileSync('./test/server.key', 'utf8'),
+  cert: fs.readFileSync('./test/server.crt', 'utf8'),
+  ca: fs.readFileSync('./test/ca.crt', 'utf8'),
+  requestCrt: true,
+  rejectUnauthorized: false,
 };
 
 https.createServer(options, app).listen(3000);

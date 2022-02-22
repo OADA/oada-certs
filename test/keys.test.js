@@ -18,24 +18,24 @@
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 chai.use(chaiAsPromised);
-const expect = chai.expect;
+const { expect } = chai;
 
 // The module to be "checked" (i.e. under test)
 const keys = require('../keys');
 
 describe('oada-certs.keys', () => {
-    describe('oada-certs.keys#create', () => {
-        it('should create a public and private key', async () => {
-            const k = await keys.create();
-            expect(k.public).to.be.an('object');
-            expect(k.private).to.be.an('object');
-        });
+  describe('oada-certs.keys#create', () => {
+    it('should create a public and private key', async () => {
+      const k = await keys.create();
+      expect(k.public).to.be.an('object');
+      expect(k.private).to.be.an('object');
     });
-    describe('oada-certs.keys#pubFromPriv', () => {
-        it('should return a public key given a valid private one', async () => {
-            const k = await keys.create();
-            const pub = await keys.pubFromPriv(k.private);
-            expect(pub).to.deep.equal(k.public);
-        });
+  });
+  describe('oada-certs.keys#pubFromPriv', () => {
+    it('should return a public key given a valid private one', async () => {
+      const k = await keys.create();
+      const pub = await keys.pubFromPriv(k.private);
+      expect(pub).to.deep.equal(k.public);
     });
+  });
 });
