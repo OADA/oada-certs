@@ -22,7 +22,7 @@ const { expect } = chai;
 const request = require('superagent');
 const jose = require('node-jose');
 
-const jwkUtil = require('../jwks-utils');
+const jwkUtil = require('../dist/jwks-utils.js');
 
 const jwkSet = require('./jwk_set.json');
 const jwkSetPriv = require('./jwk_set_priv.json');

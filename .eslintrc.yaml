@@ -34,9 +34,15 @@ parser: '@typescript-eslint/parser'
 parserOptions:
   ecmaVersion: 2020
   project: './tsconfig.eslint.json'
+  extraFileExtensions:
+    - '.mts'
+    - '.cts'
 
 overrides:
-  - files: '*.ts'
+  - files:
+      - '*.ts'
+      - '*.mts'
+      - '*.cts'
     extends:
       - plugin:github/typescript
       #- plugin:import/typescript
@@ -44,6 +50,9 @@ overrides:
       - prettier
     parserOptions:
       ecmaVersion: 2020
+      extraFileExtensions:
+        - '.mts'
+        - '.cts'
       project: './tsconfig.eslint.json'
     rules:
       '@typescript-eslint/naming-convention':
@@ -77,10 +86,15 @@ overrides:
       '@typescript-eslint/restrict-template-expressions': off
       '@typescript-eslint/no-shadow': warn
 
+  - files:
+      - '*.cjs'
+      - '*.cts'
+    rules:
+      unicorn/prefer-module: off
+      node/no-unpublished-require: off
+      import/no-commonjs: off
+
 rules:
-  unicorn/prefer-module: off
-  node/no-unpublished-require: off
-  import/no-commonjs: off
   notice/notice:
     - error
     - template: |

@@ -17,24 +17,27 @@
 
 // There are many reasons why the format may be invalid, pass all errors on
 // 'errors' array attached to the Error
-module.exports = {
-  InvalidFormatException(message, errors) {
-    this.message = message;
+export class InvalidFormatException extends Error {
+  readonly errors: readonly Error[];
+  constructor(message: string, errors: Error[] = []) {
+    super(message);
     this.name = 'Invalid Format Exception';
     this.errors = errors;
-    this.stack = new Error('Invalid format exception').stack;
-  },
+  }
+}
 
-  InvalidKeyException(message) {
-    this.message = message;
+export class InvalidKeyException extends Error {
+  constructor(message: string) {
+    super(message);
     this.name = 'Invalid Key Exception';
-    this.stack = new Error('Invalid Key Exception').stack;
-  },
+  }
+}
 
-  SignatureFailedException(message, errors) {
-    this.message = message;
+export class SignatureFailedException extends Error {
+  readonly errors: readonly Error[];
+  constructor(message: string, errors: Error[] = []) {
+    super(message);
     this.name = 'Signature Failed Exception';
     this.errors = errors;
-    this.stack = new Error('Signature Failed Exception').stack;
-  },
-};
+  }
+}

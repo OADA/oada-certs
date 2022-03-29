@@ -15,25 +15,24 @@
  * limitations under the License.
  */
 
-const jose = require('node-jose');
-const uuid = require('uuid').v4;
+import jose from 'node-jose';
+import { v4 as uuid } from 'uuid';
 
-async function create() {
+import type { RSA_JWK } from 'pem-jwk';
+
+export async function create() {
   const k = await jose.JWK.createKey('RSA', 2048, {
     kid: uuid().replace(/-/g, ''),
   }); // Assign a random string ID (I don't like the dashes in uuids)
   return {
-    public: k.toJSON(),
-    private: k.toJSON(true),
+    public: k.toJSON() as RSA_JWK,
+    private: k.toJSON(true) as RSA_JWK,
   };
 }
 
-async function pubFromPriv(privJWK) {
-  const k = await jose.JWK.asKey(privJWK);
-  return k.toJSON(); // If you don't pass true to this function, you get back just the public key
+export async function pubFromPriv(
+  ...parameters: Parameters<typeof jose.JWK.asKey>
+) {
+  const k = await jose.JWK.asKey(...parameters);
+  return k.toJSON() as RSA_JWK; // If you don't pass true to this function, you get back just the public key
 }
-
-module.exports = {
-  create,
-  pubFromPriv,
-};

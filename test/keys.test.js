@@ -21,7 +21,7 @@ chai.use(chaiAsPromised);
 const { expect } = chai;
 
 // The module to be "checked" (i.e. under test)
-const keys = require('../keys');
+const keys = require('../dist/keys.js');
 
 describe('oada-certs.keys', () => {
   describe('oada-certs.keys#create', () => {

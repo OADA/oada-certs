@@ -1,0 +1,14 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "removeComments": true,
+    "module": "esnext",
+    "moduleResolution": "node"
+  },
+  "include": ["**/*.mts"],
+  "references": [
+    {
+      "path": "./tsconfig.cjs.json"
+    }
+  ]
+}

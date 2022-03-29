@@ -15,94 +15,119 @@
  * limitations under the License.
  */
 
-const url = require('url');
-const jose = require('node-jose');
-const equal = require('deep-equal');
-const debug = require('debug');
-const request = require('superagent');
+import url from 'node:url';
+
+import type { Entry } from 'type-fest';
+import debug from 'debug';
+import equal from 'deep-equal';
+import jose from 'node-jose';
+import request from 'superagent';
+
+import type { RSA_JWK } from 'pem-jwk';
 
 const trace = debug('oada-certs#jwks-utils:trace');
 const info = debug('oada-certs#jwks-utils:info');
 const warn = debug('oada-certs#jwks-utils:warn');
 
-const utils = {};
+export type JWK = Partial<RSA_JWK & jose.JWK.RawKey>;
+export interface JWKs {
+  keys: readonly JWK[];
+}
+
+export interface JOSEHeader {
+  alg: 'RS256';
+  typ: string;
+  kid?: string;
+  jku?: string;
+  jwk?: JWK;
+}
 
 // ----------------------------------------------------------------------
 // Caching jwks requests/responses:
-const jwksCache = new Map();
+const jwksCache: Map<
+  string,
+  { jwks: JWKs; timePutIntoCache: number; strbytes: number }
+> = new Map();
 const cacheStaleTimeoutSec = 3600; // 1 hour
 const cacheFailureTimeout = 3600 * 24; // 24 hours: how long to use cached value if network request fails
 const cacheMaxSizeMB = 20; // Maximum MB allowed in the jwks cache before pruning old ones
-const cacheSize = () =>
-  Array.from(jwksCache.keys()).reduce(
-    (accumulator, uri) => accumulator + jwksCache.get(uri).strbytes,
+function cacheSize() {
+  return Array.from(jwksCache.keys()).reduce(
+    (accumulator, uri) => accumulator + jwksCache.get(uri)!.strbytes,
     0
   );
-const cachePruneOldest = () => {
-  const oldest = Array.from(jwksCache.keys()).reduce((accumulator, uri) => {
-    if (!accumulator) return uri; // First one
-    const curold = jwksCache.get(accumulator.uri);
-    if (jwksCache.get(uri).timePutIntoCache < curold.timePutIntoCache) {
-      return uri; // This uri is now min
-    }
+}
 
-    return accumulator; // Previous min is still min
-  }, false);
-  if (!oldest) {
-    // Nothing in the cache)
-    return false;
+export function cachePruneOldest() {
+  let [olduri, oldest]: Entry<typeof jwksCache> = [
+    '',
+    {
+      strbytes: 0,
+      timePutIntoCache: Number.POSITIVE_INFINITY,
+      jwks: { keys: [] },
+    },
+  ];
+  for (const [uri, jwks] of jwksCache) {
+    if (jwks.timePutIntoCache < oldest.timePutIntoCache) {
+      [olduri, oldest] = [uri, jwks];
+    }
   }
 
-  jwksCache.delete(oldest);
-  return true;
-};
+  return jwksCache.delete(olduri);
+}
 
-const putInCache = (uri, jwks, strbytes) => {
+function putInCache(uri: string, jwks: JWKs, strbytes: number) {
   if (strbytes / 1_000_000 > cacheMaxSizeMB) {
     warn(
-      `WARNING: refusing to cache jwks from uri ${uri} because it's size alone (${strbytes}) is larger than cacheMaxSizeMB (${cacheMaxSizeMB})`
+      'Refusing to cache jwks from uri %s because its size alone (%d) is larger than cacheMaxSizeMB (%d)',
+      uri,
+      strbytes,
+      cacheMaxSizeMB
     );
     return false;
   }
 
   while (cacheSize() + strbytes > cacheMaxSizeMB) {
-    if (!cachePruneOldest()) break; // If pruneOldest fails, stop looping
+    if (!cachePruneOldest()) {
+      break; // If pruneOldest fails, stop looping
+    }
   }
 
-  if (jwksCache.has(uri))
+  if (jwksCache.has(uri)) {
     trace(
-      'Putting uri ',
-      uri,
-      ' into cache with new timestamp, replacing previous entry'
+      'Putting uri %s into cache with new timestamp, replacing previous entry',
+      uri
     );
+  }
+
   jwksCache.set(uri, {
+    strbytes,
     timePutIntoCache: Date.now() / 1000,
     jwks,
   });
   return true;
-};
+}
 
-const cachePruneIfFailureTimeout = (uri) => {
+const cachePruneIfFailureTimeout = (uri: string) => {
   const now = Date.now() / 1000;
   if (
     jwksCache.has(uri) &&
-    now - jwksCache.get(uri).timePutIntoCache > cacheFailureTimeout
+    now - jwksCache.get(uri)!.timePutIntoCache > cacheFailureTimeout
   ) {
     info(
-      'jku request failed for uri ',
-      uri,
-      ', and it has been longer than cacheFailureTimeout, so removing that uri from cache due to failure'
+      'jku request failed for uri %s, and it has been longer than cacheFailureTimeout, so removing that uri from cache due to failure',
+      uri
     );
     // Remove from cache
     jwksCache.delete(uri);
   }
 };
 
-const cacheHasURIThatIsNotStale = (uri) => {
+const cacheHasURIThatIsNotStale = (uri: string) => {
   const now = Date.now() / 1000;
   return (
     jwksCache.has(uri) &&
-    now - jwksCache.get(uri).timePutIntoCache < cacheStaleTimeoutSec
+    now - jwksCache.get(uri)!.timePutIntoCache < cacheStaleTimeoutSec
   );
 };
 
@@ -110,88 +135,90 @@ const cacheHasURIThatIsNotStale = (uri) => {
 // Primary exported module:
 
 // Exporting some cache functions for testing:
-utils.clearJWKsCache = function () {
+export function clearJWKsCache() {
   jwksCache.clear();
-};
+}
 
-utils.getJWKsCache = function () {
+export function getJWKsCache() {
   return jwksCache;
-};
+}
 
-utils.cachePruneOldest = cachePruneOldest;
+/**
+ * Decide if an object is a JWK
+ */
+export function isJWK(key: { kty?: unknown }): key is JWK {
+  return Boolean(key?.kty);
+}
 
-// Decide if an object is a JWK
-utils.isJWK = (key) => Boolean(key && key.kty);
+/**
+ * Decide if an object is a set of JWKs
+ */
+export function isJWKset(set: unknown): set is JWKs {
+  // @ts-expect-error stuff
+  // eslint-disable-next-line @typescript-eslint/no-unsafe-assignment
+  const keys = set?.keys;
+  return Array.isArray(keys) && keys.some((element) => isJWK(element));
+}
 
-// Decide if an object is a set of JWKs
-utils.isJWKset = (set) => {
-  const keys = set && set.keys;
-  return (
-    Boolean(keys) &&
-    typeof keys.some === 'function' &&
-    keys.some((element) => utils.isJWK(element))
-  );
-};
-
-// Pick a JWK from a JWK set by its Key ID
-utils.findJWK = (kid, jwks) => {
+/**
+ * Pick a JWK from a JWK set by its Key ID
+ */
+export function findJWK(kid: string, jwks: JWKs) {
   if (!kid) {
     return;
   }
 
-  let result;
-  jwks.keys.every((jwk) => {
-    if (utils.isJWK(jwk) && jwk.kid === kid) {
-      result = jwk;
-      return false;
-    }
-
-    return true;
-  });
-  trace('findJWK: for kid(', kid, '), returning jwk = ', result);
+  const result = jwks.keys.find((jwk) => isJWK(jwk) && jwk.kid === kid);
+  trace(result, 'findJWK: returning ');
   return result;
-};
+}
 
-utils.decodeWithoutVerify = function (jwt) {
-  const parts = jwt.split('.');
-  trace('decodeWithoutVerify: parts before decoding = ', parts);
-  let header = jose.util.base64url.decode(parts[0]).toString();
-  let payload = jose.util.base64url.decode(parts[1]).toString();
-  const signature = parts[2];
+export function decodeWithoutVerify(jwt: string) {
+  const [sheader, spayload, signature] = jwt.split('.');
+  trace('decodeWithoutVerify: parts before decoding = %s', [
+    sheader,
+    spayload,
+    signature,
+  ]);
+  let header: JOSEHeader;
+  let payload: unknown;
   try {
-    header = JSON.parse(header);
-  } catch (error) {
+    header = JSON.parse(
+      jose.util.base64url.decode(sheader!).toString()
+    ) as JOSEHeader;
+  } catch (error: unknown) {
     throw new Error(
-      `Could not JSON.parse decoded header.  Header string is: ${header}, error was: ${error.toString()}`
+      `Could not JSON.parse decoded header. Header string is: ${sheader}, error was: ${error}`
     );
   }
 
   try {
-    payload = JSON.parse(payload);
-  } catch (error) {
+    payload = JSON.parse(jose.util.base64url.decode(spayload!).toString());
+  } catch (error: unknown) {
     warn(
-      `Could not JSON.parse payload, assuming it is a string to be left alone.  Payload string is: ${payload}, error was: ${error.toString()}`
+      `Could not JSON.parse payload, assuming it is a string to be left alone. Payload string is: ${spayload}, error was: ${error}`
     );
+    payload = spayload;
   }
 
   trace(
-    'decodeWithoutVerify: decoded header = ',
+    'decodeWithoutVerify: decoded header = %o, payload = %o, signature = %s',
     header,
-    ', payload = ',
     payload,
-    ', signature = ',
     signature
   );
   return { header, payload, signature };
-};
+}
 
 // Supported headers: [kid, jwk, jku]
-utils.jwkForSignature = async (sig, hint, options) => {
-  options = options || {};
+export async function jwkForSignature(
+  sig: string,
+  hint: false | string | JWKs | JWK,
+  { timeout = 1000 }: { timeout?: number } = {}
+) {
+  const { header } = decodeWithoutVerify(sig);
 
-  const { header } = utils.decodeWithoutVerify(sig);
-
-  const checkJWKEqualsJoseJWK = (jwk) => {
+  const checkJWKEqualsJoseJWK = (jwk?: JWK) => {
     trace(jwk, 'checkJWKEqualsJoseJWK: started function');
     if (!jwk) {
       warn(
@@ -203,7 +230,7 @@ utils.jwkForSignature = async (sig, hint, options) => {
     }
 
     if (header.jwk && !equal(jwk, header.jwk, { strict: true })) {
-      warn('header.jwk (', header.jwk, ') did not match jwk (', jwk, ')');
+      warn('header.jwk (%o) did not match jwk (%o)', header.jwk, jwk);
       throw new Error('JWK did not match jwk JOSE header');
     }
 
@@ -223,18 +250,18 @@ utils.jwkForSignature = async (sig, hint, options) => {
   // new kid is published in your jwks, it will be immediately available to all clients.  If a key
   // is deemed no longer trusted and removed from the jwks, then it will only validate at most one
   // time in at most a 1 hour window after un-publishing.
-  const getJWK = async (uri) => {
+  async function getJWK(uri: string): Promise<JWK> {
     // MUST use HTTPS (not HTTP)
     const u = new URL(uri);
     u.protocol = 'https';
     uri = url.format(u);
 
-    const request_ = request.get(uri);
-    if (typeof request_.buffer === 'function') {
-      request_.buffer();
+    const jwkRequest = request.get(uri);
+    if (typeof jwkRequest.buffer === 'function') {
+      void jwkRequest.buffer();
     }
 
-    request_.timeout(options.timeout || 1000);
+    void jwkRequest.timeout(timeout);
 
     // Fire off the request here first, then immediately check cache before javascript event queue moves on.
     // If it's there, then that "thread" of execution will call the callback instead of the one after
@@ -243,17 +270,19 @@ utils.jwkForSignature = async (sig, hint, options) => {
       'Sending out GET request for uri %s, will check cache while it is waiting',
       uri
     );
-    let jwks;
+    let jwks: JWKs;
     try {
-      const resp = await request_.send();
+      const resp = await jwkRequest.send();
 
       // If there was no error, then we can go ahead and try to parse the body (which could result in an error)
       trace(
         'Finished retrieving uri %s, had no error in the request, will now try to parse response.',
         uri
       );
-      jwks = JSON.parse(resp.text);
-      if (!utils.isJWKset(jwks)) {
+      const json: unknown = JSON.parse(resp.text);
+      if (isJWKset(json)) {
+        jwks = json;
+      } else {
         throw new Error(
           'jwks parsed successfully with JSON.parse, but it was not a valid jwks'
         );
@@ -261,9 +290,9 @@ utils.jwkForSignature = async (sig, hint, options) => {
 
       // Put this successful jwks set into the cache
       if (putInCache(uri, jwks, resp.text.length)) {
-        trace(`Added jwks to cache for uri ${uri}`);
+        trace('Added jwks to cache for uri %s', uri);
       } else {
-        info(`Failed to add jwks to cache for uri ${uri}`);
+        info('Failed to add jwks to cache for uri %', uri);
       }
 
       // Now, check if we already have the uri in the cache and
@@ -275,23 +304,22 @@ utils.jwkForSignature = async (sig, hint, options) => {
           uri,
           ' in cache and it is not stale, returning it immediately'
         );
-        const jwk = utils.findJWK(header.kid, jwksCache.get(uri).jwks);
+        const jwk = findJWK(header.kid!, jwksCache.get(uri)!.jwks);
         if (jwk) {
           return checkJWKEqualsJoseJWK(jwk);
         }
       }
 
       trace(
-        'Did not find non-stale uri ',
-        uri,
-        ' in cache, waiting on request to complete instead'
+        'Did not find non-stale uri %s in cache, waiting on request to complete instead',
+        uri
       );
       // If we get here, then we did not have a valid, un-stale kid in the cache, so we need
       // to wait on the request to call the callback instead (above).  If it fails above, then it
       // will continue to use the stale URI until the 24-hour failure period.  The callback for the
       // overall function will end up being called in the callback for the request.
-      return resp;
-    } catch (error) {
+      // await resp;
+    } catch (error: unknown) {
       // If we get to this point, either jwks is valid and in the jwks variable, or we had an error
       warn('jku request failed for uri %s', uri);
       // If the request had an error (i.e. network or host is down now), let's check if we have
@@ -300,35 +328,29 @@ utils.jwkForSignature = async (sig, hint, options) => {
       cachePruneIfFailureTimeout(uri);
       // Now if it's not in the cache, since the request had an error, then return the error
       if (!jwksCache.has(uri)) {
-        warn(
-          'WARNING: uri (',
-          uri,
-          ') had error, and it is not in cache, throwing'
-        );
+        warn('uri (%s) had error, and it is not in cache, throwing', uri);
         throw error;
       }
 
       // If we get here, there was an error, but it was in the cache still before the cacheFailureTimeout,
       // so put that in the main jwks variable to check later
       info(
-        'jku request failed for uri ',
-        uri,
-        ', but we have cached copy that we will use for 24 hours'
+        'jku request failed for uri %s, but we have cached copy that we will use for 24 hours',
+        uri
       );
-      jwks = jwksCache.get(uri).jwks;
+      jwks = jwksCache.get(uri)!.jwks;
     }
 
     // And finally, if we got to this point, we either did not have an error, or we had an error but
     // we decided to use our cached value.  Either way, the jwks variable now has a valid jwks in it.
     // This ends the thread that runs after the web request finishes.
     trace(
-      'Finished with request path, looking for header.kid (',
+      'Finished with request path, looking for header.kid (%s) in retrieved jwks:%o',
       header.kid,
-      ') in retrieved jwks:',
       jwks
     );
-    return checkJWKEqualsJoseJWK(utils.findJWK(header.kid, jwks));
-  }; // End getJWK function
+    return checkJWKEqualsJoseJWK(findJWK(header.kid!, jwks));
+  }
 
   trace('XXXXXX HERE!!!!!!');
   // Now we can do the main part of the function which checks the hint and then calls one of
@@ -351,7 +373,7 @@ utils.jwkForSignature = async (sig, hint, options) => {
   // - If object and looks like a jwk, compare that jwk with jose's jwk
   switch (typeof hint) {
     case 'boolean':
-      if (hint === false) {
+      if (!hint) {
         // Lookup solely based on JOSE headers
         if (header.jku) {
           warn(
@@ -361,7 +383,7 @@ utils.jwkForSignature = async (sig, hint, options) => {
 
         if (!header.jwk) {
           warn('signature is untrusted and has no jwk key to check');
-          return checkJWKEqualsJoseJWK(false);
+          return checkJWKEqualsJoseJWK();
         }
 
         trace(
@@ -376,12 +398,12 @@ utils.jwkForSignature = async (sig, hint, options) => {
       trace('hint is a string, assuming URL to getJWK');
       return getJWK(hint);
     case 'object':
-      if (utils.isJWKset(hint)) {
+      if (isJWKset(hint)) {
         trace('hint is object, looks like jwk set, checking that');
-        return checkJWKEqualsJoseJWK(utils.findJWK(header.kid, hint));
+        return checkJWKEqualsJoseJWK(findJWK(header.kid!, hint));
       }
 
-      if (utils.isJWK(hint) && header.kid === hint.kid) {
+      if (isJWK(hint) && header.kid === hint.kid) {
         trace('hint is object, looks like jwk w/ same kid, checking');
         return checkJWKEqualsJoseJWK(hint);
       }
@@ -394,6 +416,4 @@ utils.jwkForSignature = async (sig, hint, options) => {
   // If we get here, the hint didn't make sense so we error out:
   warn('jwkForSignature: Hint was invalid!');
   throw new Error('Invalid hint');
-}; // End jwkForSignature
-
-module.exports = utils;
+}

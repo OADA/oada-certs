@@ -1,4 +1,6 @@
-/* Copyright 2015 Open Ag Data Alliance
+/**
+ * @license
+ * Copyright 2015 Open Ag Data Alliance
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,8 +15,6 @@
  * limitations under the License.
  */
 
-'use strict';
-
 const cloneDeep = require('clone-deep');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
@@ -22,13 +22,11 @@ chai.use(chaiAsPromised);
 const { expect } = chai;
 const nock = require('nock');
 const url = require('url');
-const debug = require('debug');
-const log = debug('oada-certs#test:trace');
 const jose = require('node-jose');
 
 // The module to be "checked" (i.e. under test)
-const validate = require('../validate');
-const sign = require('../sign');
+const { validate, TRUSTED_LIST_URI } = require('../dist/validate.js');
+const { sign } = require('../dist/sign.js');
 
 // We will mock a server for the tests that use this URL:
 const TEST_ROOT = 'https://test.example.org/';
@@ -105,7 +103,7 @@ describe('oada-certs', () => {
     // Setup the mock server to serve a trusted list with a URL for it's own jwk set
     // When the main function tries to get the Trusted List, this will respond instead of github:
     beforeEach(function mockList() {
-      const uri = url.parse(validate.TRUSTED_LIST_URI);
+      const uri = url.parse(TRUSTED_LIST_URI);
       nock(url.format({ protocol: uri.protocol, host: uri.host }))
         // .log(log)
         .get(uri.path)
