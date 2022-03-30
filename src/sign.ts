@@ -41,7 +41,7 @@ import type { JOSEHeader, JWK } from './jwks-utils';
 const trace = debug('oada-certs:trace');
 
 export async function sign(
-  payload: string | Buffer,
+  payload: string | Record<string, unknown> | Buffer,
   key: string | JWK,
   {
     header: { typ = 'JWT', alg = 'RS256', ...header } = {},
@@ -110,16 +110,16 @@ export async function sign(
   header.jwk = cloneDeep(publicjwk);
 
   try {
-    return await jose.JWS.createSign(
+    return (await jose.JWS.createSign(
       { format: 'compact' },
       {
-        // @ts-expect-error IDEK
+        // @ts-expect-error The node-jose types are messed up...
         key: privatejwk,
         header: { typ, alg, ...header },
       }
     )
       .update(payload)
-      .final();
+      .final()) as unknown as string;
   } catch (error: unknown) {
     trace(
       'Failed to sign payload, error was: ',

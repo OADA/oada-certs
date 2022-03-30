@@ -1,0 +1,17 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "composite": false,
+    "removeComments": true,
+    "declaration": false,
+    "allowJs": true,
+    "rootDir": ".",
+    "outDir": "../.test"
+  },
+  "include": ["."],
+  "references": [
+    {
+      "path": "../"
+    }
+  ]
+}

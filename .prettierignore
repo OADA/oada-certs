@@ -1,4 +1,5 @@
 dist
+coverage
 .test
 node_modules
 yarn-cache

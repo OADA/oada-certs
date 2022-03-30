@@ -57,7 +57,8 @@ if (argv.validate) {
 
   // The signedcert may be a javascript file that is module.exports = "stringcert",
   // or just the string cert itself.  eval it if it's the module.exports.
-  let signedcert = (await readFile(signedcertpath)).toString();
+  const file = await readFile(signedcertpath);
+  let signedcert = file.toString();
   if (signedcert.includes('module.exports')) {
     signedcert = eval(signedcert) as string;
   } else {

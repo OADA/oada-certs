@@ -25,9 +25,9 @@ import request from 'superagent';
 
 import type { RSA_JWK } from 'pem-jwk';
 
-const trace = debug('oada-certs#jwks-utils:trace');
-const info = debug('oada-certs#jwks-utils:info');
-const warn = debug('oada-certs#jwks-utils:warn');
+const trace = debug('oada-certs:jwks-utils:trace');
+const info = debug('oada-certs:jwks-utils:info');
+const warn = debug('oada-certs:jwks-utils:warn');
 
 export type JWK = Partial<RSA_JWK & jose.JWK.RawKey>;
 export interface JWKs {
@@ -42,15 +42,22 @@ export interface JOSEHeader {
   jwk?: JWK;
 }
 
-// ----------------------------------------------------------------------
-// Caching jwks requests/responses:
+/**
+ * Cache jwks requests/responses:
+ */
 const jwksCache: Map<
   string,
   { jwks: JWKs; timePutIntoCache: number; strbytes: number }
 > = new Map();
 const cacheStaleTimeoutSec = 3600; // 1 hour
-const cacheFailureTimeout = 3600 * 24; // 24 hours: how long to use cached value if network request fails
-const cacheMaxSizeMB = 20; // Maximum MB allowed in the jwks cache before pruning old ones
+/**
+ * How long to use cached value if network request fails
+ */
+const cacheFailureTimeout = 3600 * 24;
+/**
+ * Maximum MB allowed in the jwks cache before pruning old ones
+ */
+const cacheMaxSizeMB = 20;
 function cacheSize() {
   return Array.from(jwksCache.keys()).reduce(
     (accumulator, uri) => accumulator + jwksCache.get(uri)!.strbytes,
@@ -146,8 +153,8 @@ export function getJWKsCache() {
 /**
  * Decide if an object is a JWK
  */
-export function isJWK(key: { kty?: unknown }): key is JWK {
-  return Boolean(key?.kty);
+export function isJWK(key: unknown): key is JWK {
+  return typeof key === 'object' && Boolean(key) && 'kty' in key!;
 }
 
 /**
@@ -163,7 +170,7 @@ export function isJWKset(set: unknown): set is JWKs {
 /**
  * Pick a JWK from a JWK set by its Key ID
  */
-export function findJWK(kid: string, jwks: JWKs) {
+export function findJWK(kid: string | undefined, jwks: JWKs) {
   if (!kid) {
     return;
   }
@@ -171,6 +178,42 @@ export function findJWK(kid: string, jwks: JWKs) {
   const result = jwks.keys.find((jwk) => isJWK(jwk) && jwk.kid === kid);
   trace(result, 'findJWK: returning ');
   return result;
+}
+
+async function fetchAndCacheJKU(
+  uri: string,
+  timeout: number
+): Promise<JWKs | undefined> {
+  const jwkRequest = request.get(uri);
+  if (typeof jwkRequest.buffer === 'function') {
+    void jwkRequest.buffer();
+  }
+
+  void jwkRequest.timeout(timeout);
+
+  const resp = await jwkRequest.send();
+
+  // If there was no error, then we can go ahead and try to parse the body (which could result in an error)
+  trace(
+    'Finished retrieving uri %s, had no error in the request, will now try to parse response.',
+    uri
+  );
+
+  const jwks: unknown = JSON.parse(resp.text);
+  if (!isJWKset(jwks)) {
+    throw new Error(
+      'jwks parsed successfully with JSON.parse, but it was not a valid jwks'
+    );
+  }
+
+  // Put this successful jwks set into the cache
+  if (putInCache(uri, jwks, resp.text.length)) {
+    trace('Added jwks to cache for uri %s', uri);
+    return jwks;
+  }
+
+  info('Failed to add jwks to cache for uri %', uri);
+  return undefined;
 }
 
 export function decodeWithoutVerify(jwt: string) {
@@ -196,7 +239,9 @@ export function decodeWithoutVerify(jwt: string) {
     payload = JSON.parse(jose.util.base64url.decode(spayload!).toString());
   } catch (error: unknown) {
     warn(
-      `Could not JSON.parse payload, assuming it is a string to be left alone. Payload string is: ${spayload}, error was: ${error}`
+      'Could not JSON.parse payload, assuming it is a string to be left alone. Payload string is: %s, error was: %o',
+      spayload,
+      error
     );
     payload = spayload;
   }
@@ -210,7 +255,9 @@ export function decodeWithoutVerify(jwt: string) {
   return { header, payload, signature };
 }
 
-// Supported headers: [kid, jwk, jku]
+/**
+ * Supported headers: [kid, jwk, jku]
+ */
 export async function jwkForSignature(
   sig: string,
   hint: false | string | JWKs | JWK,
@@ -256,12 +303,7 @@ export async function jwkForSignature(
     u.protocol = 'https';
     uri = url.format(u);
 
-    const jwkRequest = request.get(uri);
-    if (typeof jwkRequest.buffer === 'function') {
-      void jwkRequest.buffer();
-    }
-
-    void jwkRequest.timeout(timeout);
+    const resp = fetchAndCacheJKU(uri, timeout);
 
     // Fire off the request here first, then immediately check cache before javascript event queue moves on.
     // If it's there, then that "thread" of execution will call the callback instead of the one after
@@ -272,53 +314,36 @@ export async function jwkForSignature(
     );
     let jwks: JWKs;
     try {
-      const resp = await jwkRequest.send();
-
-      // If there was no error, then we can go ahead and try to parse the body (which could result in an error)
-      trace(
-        'Finished retrieving uri %s, had no error in the request, will now try to parse response.',
-        uri
-      );
-      const json: unknown = JSON.parse(resp.text);
-      if (isJWKset(json)) {
-        jwks = json;
-      } else {
-        throw new Error(
-          'jwks parsed successfully with JSON.parse, but it was not a valid jwks'
-        );
-      }
-
-      // Put this successful jwks set into the cache
-      if (putInCache(uri, jwks, resp.text.length)) {
-        trace('Added jwks to cache for uri %s', uri);
-      } else {
-        info('Failed to add jwks to cache for uri %', uri);
-      }
-
       // Now, check if we already have the uri in the cache and
       // if the kid is already in it's list of keys:
       trace('Checking cache for non-stale uri ', uri);
       if (cacheHasURIThatIsNotStale(uri)) {
         trace(
-          'Found uri ',
-          uri,
-          ' in cache and it is not stale, returning it immediately'
+          'Found uri %s in cache and it is not stale, returning it immediately',
+          uri
         );
-        const jwk = findJWK(header.kid!, jwksCache.get(uri)!.jwks);
+        const jwk = findJWK(header.kid, jwksCache.get(uri)!.jwks);
         if (jwk) {
           return checkJWKEqualsJoseJWK(jwk);
         }
       }
 
-      trace(
-        'Did not find non-stale uri %s in cache, waiting on request to complete instead',
-        uri
-      );
       // If we get here, then we did not have a valid, un-stale kid in the cache, so we need
       // to wait on the request to call the callback instead (above).  If it fails above, then it
       // will continue to use the stale URI until the 24-hour failure period.  The callback for the
       // overall function will end up being called in the callback for the request.
-      // await resp;
+      trace(
+        'Did not find non-stale uri %s in cache, waiting on request to complete instead',
+        uri
+      );
+      const result = await resp;
+      if (!result) {
+        throw new Error(
+          `Failed to get jwks from uri ${uri}, and it was not in the cache`
+        );
+      }
+
+      jwks = result;
     } catch (error: unknown) {
       // If we get to this point, either jwks is valid and in the jwks variable, or we had an error
       warn('jku request failed for uri %s', uri);
@@ -349,10 +374,9 @@ export async function jwkForSignature(
       header.kid,
       jwks
     );
-    return checkJWKEqualsJoseJWK(findJWK(header.kid!, jwks));
+    return checkJWKEqualsJoseJWK(findJWK(header.kid, jwks));
   }
 
-  trace('XXXXXX HERE!!!!!!');
   // Now we can do the main part of the function which checks the hint and then calls one of
   // the functions above....
   // This hint thing is complicated....
@@ -400,7 +424,7 @@ export async function jwkForSignature(
     case 'object':
       if (isJWKset(hint)) {
         trace('hint is object, looks like jwk set, checking that');
-        return checkJWKEqualsJoseJWK(findJWK(header.kid!, hint));
+        return checkJWKEqualsJoseJWK(findJWK(header.kid, hint));
       }
 
       if (isJWK(hint) && header.kid === hint.kid) {

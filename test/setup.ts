@@ -15,27 +15,30 @@
  * limitations under the License.
  */
 
-const fs = require('fs');
-const express = require('express');
-const https = require('https');
-const cors = require('cors');
+import fs from 'node:fs';
+import https from 'node:https';
 
-const jwkSet = require('./jwk_set.json');
+import cors from 'cors';
+import express from 'express';
+
+import jwkSet from './jwk_set.js';
+
+process.env.NODE_TLS_REJECT_UNAUTHORIZED = '0';
 
 const app = express();
 
 app.use(cors());
 
-app.get('/jwks_uri', (request, res) => {
-  res.json(jwkSet);
+app.get('/jwks_uri', (_request, response) => {
+  response.json(jwkSet);
 });
 
-app.get('/jwks_uri_broken', (request, res) => {
-  res.send('');
+app.get('/jwks_uri_broken', (_request, response) => {
+  response.send('');
 });
 
-app.get('/jwks_uri_invalid', (request, res) => {
-  res.json({});
+app.get('/jwks_uri_invalid', (_request, response) => {
+  response.json({});
 });
 
 app.get('/jwks_uri_slow', () => {
@@ -43,19 +46,19 @@ app.get('/jwks_uri_slow', () => {
 });
 
 // For testing cache failures:
-let isdead = false;
-app.get('/jwks_uri_dies_after_first_request', (request, res) => {
-  if (isdead) {
-    res.status(404).send('Not Found');
-    return;
+let isDead = false;
+app.get('/jwks_uri_dies_after_first_request', (_request, response) => {
+  if (isDead) {
+    response.status(404).send('Not Found');
+  } else {
+    response.json(jwkSet);
   }
 
-  isdead = true;
-  res.json(jwkSet);
+  isDead = true;
 });
-app.get('/reset_jwks_uri_dies_after_first_request', (request, res) => {
-  isdead = false;
-  res.json({});
+app.get('/reset_jwks_uri_dies_after_first_request', (_request, response) => {
+  isDead = false;
+  response.json({});
 });
 
 const options = {

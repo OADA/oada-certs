@@ -30,9 +30,9 @@ import {
 } from './jwks-utils.js';
 import type { JOSEHeader } from './jwks-utils';
 
-const warn = debug('oada-certs#validate:warn');
-const info = debug('oada-certs#validate:info');
-const trace = debug('oada-certs#validate:trace');
+const warn = debug('oada-certs:validate:warn');
+const info = debug('oada-certs:validate:info');
+const trace = debug('oada-certs:validate:trace');
 
 export const TRUSTED_LIST_URI =
   'https://oada.github.io/oada-trusted-lists/client-registration-v2.json';
