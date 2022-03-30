@@ -1,7 +1,7 @@
 {
   "name": "@oada/certs",
   "bin": {
-    "@oada/certs": "./dist/cli.mjs",
+    "certs": "./dist/cli.mjs",
     "oada-certs": "./dist/cli.mjs"
   },
   "version": "4.0.0",
