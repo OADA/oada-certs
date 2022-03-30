@@ -229,6 +229,14 @@ __metadata:
     type-fest: ^2.12.1
     typescript: ^4.6.3
     uuid: ^8.3.2
+  peerDependencies:
+    "@types/node-jose": ^1.1.10
+    "@types/pem-jwk": ^2.0.0
+  peerDependenciesMeta:
+    "@types/node-jose":
+      optional: true
+    "@types/pem-jwk":
+      optional: true
   bin:
     certs: ./dist/cli.mjs
     oada-certs: ./dist/cli.mjs
