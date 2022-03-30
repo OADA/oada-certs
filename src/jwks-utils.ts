@@ -29,7 +29,16 @@ const trace = debug('oada-certs:jwks-utils:trace');
 const info = debug('oada-certs:jwks-utils:info');
 const warn = debug('oada-certs:jwks-utils:warn');
 
-export type JWK = Partial<RSA_JWK & jose.JWK.RawKey>;
+/**
+ * @todo create union of JWK types discriminated on kty
+ */
+export interface JWK extends Partial<RSA_JWK & jose.JWK.RawKey> {
+  /**
+   * Must have "kty" to be a JWK
+   */
+  kty: string;
+  pem?: string;
+}
 export interface JWKs {
   keys: readonly JWK[];
 }

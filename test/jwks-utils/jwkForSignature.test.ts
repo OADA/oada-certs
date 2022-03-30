@@ -167,7 +167,13 @@ test('should fail for invalid jwk/jwks hint', async (t) => {
   )
     .update('FOO BAR')
     .final();
-  await t.throwsAsync(jwkForSignature(sig as unknown as string, {}));
+  await t.throwsAsync(
+    jwkForSignature(
+      sig as unknown as string,
+      // @ts-expect-error intentionally wrong type
+      {}
+    )
+  );
 });
 
 test('should fail for invalid hints', async (t) => {

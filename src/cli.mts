@@ -26,8 +26,8 @@ import debug from 'debug';
 import minimist from 'minimist';
 import pemjwk from 'pem-jwk';
 
+import type { JOSEHeader, JWK } from './jwks-utils';
 import { keys, sign, validate } from '.';
-import type { JOSEHeader } from './jwks-utils';
 
 const argv = minimist(process.argv.slice(2));
 const error = debug('oada-certs:error');
@@ -166,7 +166,8 @@ const signkeypath =
   (argv.signkey as string) ||
   `${path.dirname(url.fileURLToPath(import.meta.url))}/test/dev_privatekey.pem`;
 const file = await readFile(signkeypath);
-const signkey = {
+const signkey: JWK = {
+  kty: 'PEM',
   pem: file.toString(),
   kid: (argv.signkid as string) || 'dev1',
 };
