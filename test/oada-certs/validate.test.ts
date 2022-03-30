@@ -37,7 +37,7 @@ let pubJwk: JWK;
 test.before(async () => {
   const jwk = await jose_JWK.asKey(privJwk);
   // If you do not pass true to this function, it gives back only the public key
-  pubJwk = jwk.toJSON();
+  pubJwk = jwk.toJSON() as JWK;
 });
 
 // ------------------------------------------------------------------------------------------
