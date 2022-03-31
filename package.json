@@ -4,7 +4,7 @@
     "certs": "./dist/cli.mjs",
     "oada-certs": "./dist/cli.mjs"
   },
-  "version": "4.0.4",
+  "version": "4.0.5",
   "description": "Generate and verify JWT signatures (OAuth dynamic client registration certificates and Trellis document integrity signatures)  in the Open Ag Data Alliance (OADA) and Trellis ecosystems",
   "main": "dist/index.js",
   "files": [

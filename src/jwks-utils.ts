@@ -17,7 +17,7 @@
 
 import url from 'node:url';
 
-import { JWK as JOSE_JWK, util } from 'node-jose';
+import { JWK as jose_JWK, util } from 'node-jose';
 import type { Entry } from 'type-fest';
 import debug from 'debug';
 import equal from 'deep-equal';
@@ -32,7 +32,7 @@ const warn = debug('oada-certs:jwks-utils:warn');
 /**
  * @todo create union of JWK types discriminated on kty
  */
-export interface JWK extends Partial<RSA_JWK & JOSE_JWK.RawKey> {
+export interface JWK extends Partial<RSA_JWK & jose_JWK.RawKey> {
   /**
    * Must have "kty" to be a JWK
    */

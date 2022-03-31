@@ -31,9 +31,9 @@
 
 */
 
+import { JWS, JWK as jose_JWK } from 'node-jose';
 import cloneDeep from 'clone-deep';
 import debug from 'debug';
-import jose from 'node-jose';
 
 import { InvalidKeyException, SignatureFailedException } from './errors';
 import type { JOSEHeader, JWK } from './jwks-utils';
@@ -55,8 +55,8 @@ export async function sign(
 
   // AsKey needs the key to be just the pem string if it's a pem
   let privatejwk = await (typeof key === 'string'
-    ? jose.JWK.asKey(key, 'pem')
-    : jose.JWK.asKey(key));
+    ? jose_JWK.asKey(key, 'pem')
+    : jose_JWK.asKey(key));
   // If (key.kid) privatejwk.kid = key.kid; // maintain kid from original if passed
   // options.header.kid can override the one in the private key:
   if (header?.kid) {
@@ -66,7 +66,7 @@ export async function sign(
     );
     const json = privatejwk.toJSON(true) as JWK;
     json.kid = header.kid;
-    privatejwk = await jose.JWK.asKey(json);
+    privatejwk = await jose_JWK.asKey(json);
   }
 
   trace('sign: kid on privatejwk = ', privatejwk.kid);
@@ -110,7 +110,7 @@ export async function sign(
   header.jwk = cloneDeep(publicjwk);
 
   try {
-    return (await jose.JWS.createSign(
+    return (await JWS.createSign(
       { format: 'compact' },
       {
         // @ts-expect-error The node-jose types are messed up...

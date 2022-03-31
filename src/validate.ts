@@ -15,8 +15,8 @@
  * limitations under the License.
  */
 
+import { JWS, JWK as jose_JWK } from 'node-jose';
 import debug from 'debug';
-import jose from 'node-jose';
 import request from 'superagent';
 
 import {
@@ -325,8 +325,7 @@ export async function validate(
     let valid = false;
     try {
       valid = Boolean(
-        jwk &&
-          (await jose.JWS.createVerify(await jose.JWK.asKey(jwk)).verify(sig))
+        jwk && (await JWS.createVerify(await jose_JWK.asKey(jwk)).verify(sig))
       ); // Actually returns an object with header, payload, protected, key
     } catch (error: unknown) {
       details.push({
