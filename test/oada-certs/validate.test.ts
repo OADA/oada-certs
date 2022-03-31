@@ -24,7 +24,7 @@ import nock from 'nock';
 
 // The module to be "checked" (i.e. under test)
 import { TRUSTED_LIST_URI, validate } from '../../dist/validate.js';
-import type { JWK } from '../../src/jwks-utils.js';
+import type { JWK } from '../../dist/jwks-utils.js';
 import { sign } from '../../dist/sign.js';
 
 // Keypair used for signing in the tests:

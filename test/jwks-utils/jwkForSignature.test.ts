@@ -17,7 +17,7 @@
 
 import test from 'ava';
 
-import jose from 'node-jose';
+import { JWS, JWK as jose_JWK } from 'node-jose';
 import request from 'superagent';
 
 import { JWK, jwkForSignature } from '../../dist/jwks-utils.js';
@@ -32,13 +32,13 @@ let key: JWK;
 
 test.before(async () => {
   // Setup a couple of keys and a keystore to use:
-  key = await jose.JWK.asKey(jwkSetPriv.keys[0]);
+  key = await jose_JWK.asKey(jwkSetPriv.keys[0]);
 });
 
 const options = { format: 'compact' };
 
 test('should work with "jwk" JOSE header', async (t) => {
-  const sig = await jose.JWS.createSign(
+  const sig = await JWS.createSign(
     // @ts-expect-error types are off
     options,
     { key, header: { jwk } }
@@ -50,7 +50,7 @@ test('should work with "jwk" JOSE header', async (t) => {
 });
 
 test('should NOT work with "jku" JOSE header if hint is false (untrusted)', async (t) => {
-  const sig = await jose.JWS.createSign(
+  const sig = await JWS.createSign(
     // @ts-expect-error types are off
     options,
     {
@@ -68,7 +68,7 @@ test('should NOT work with "jku" JOSE header if hint is false (untrusted)', asyn
 });
 
 test('should work with "jku" JOSE header if hint is a string and is the same as the jku header', async (t) => {
-  const sig = await jose.JWS.createSign(
+  const sig = await JWS.createSign(
     // @ts-expect-error types are off
     options,
     {
@@ -86,7 +86,7 @@ test('should work with "jku" JOSE header if hint is a string and is the same as 
 });
 
 test('should by default use the hint string to fetch the jwks instead of the jku on the header if they do not match', async (t) => {
-  const sig = await jose.JWS.createSign(
+  const sig = await JWS.createSign(
     // @ts-expect-error types are off
     options,
     {
@@ -104,7 +104,7 @@ test('should by default use the hint string to fetch the jwks instead of the jku
 });
 
 test('should work with URI hint', async (t) => {
-  const sig = await jose.JWS.createSign(
+  const sig = await JWS.createSign(
     // @ts-expect-error types are off
     options,
     {
@@ -121,7 +121,7 @@ test('should work with URI hint', async (t) => {
 });
 
 test('should work with jwk hint', async (t) => {
-  const sig = await jose.JWS.createSign(
+  const sig = await JWS.createSign(
     // @ts-expect-error types are off
     options,
     {
@@ -138,7 +138,7 @@ test('should work with jwk hint', async (t) => {
 });
 
 test('should work with jwks hint', async (t) => {
-  const sig = await jose.JWS.createSign(
+  const sig = await JWS.createSign(
     // @ts-expect-error types are off
     options,
     {
@@ -155,7 +155,7 @@ test('should work with jwks hint', async (t) => {
 });
 
 test('should fail for invalid jwk/jwks hint', async (t) => {
-  const sig = await jose.JWS.createSign(
+  const sig = await JWS.createSign(
     // @ts-expect-error types are off
     options,
     {
@@ -177,7 +177,7 @@ test('should fail for invalid jwk/jwks hint', async (t) => {
 });
 
 test('should fail for invalid hints', async (t) => {
-  const sig = await jose.JWS.createSign(
+  const sig = await JWS.createSign(
     // @ts-expect-error types are off
     options,
     { key }
@@ -194,7 +194,7 @@ test('should fail for invalid hints', async (t) => {
 });
 
 test('should fail when JWKS URI can not be parsed', async (t) => {
-  const sig = await jose.JWS.createSign(
+  const sig = await JWS.createSign(
     // @ts-expect-error types are off
     options,
     { key }
@@ -210,7 +210,7 @@ test('should fail when JWKS URI can not be parsed', async (t) => {
 });
 
 test('should fail when JWKS URI hosts an invalid JWK', async (t) => {
-  const sig = await jose.JWS.createSign(
+  const sig = await JWS.createSign(
     // @ts-expect-error types are off
     options,
     { key }
@@ -226,7 +226,7 @@ test('should fail when JWKS URI hosts an invalid JWK', async (t) => {
 });
 
 test('should timeout', async (t) => {
-  const sig = await jose.JWS.createSign(
+  const sig = await JWS.createSign(
     // @ts-expect-error types are off
     options,
     {
@@ -246,7 +246,7 @@ test('should timeout', async (t) => {
 });
 
 test('with both "jku" and "jwk" JOSE headers', async (t) => {
-  const sig1 = await jose.JWS.createSign(
+  const sig1 = await JWS.createSign(
     // @ts-expect-error types are off
     options,
     {
@@ -263,7 +263,7 @@ test('with both "jku" and "jwk" JOSE headers', async (t) => {
   const result1 = await jwkForSignature(sig1 as unknown as string, jku);
   t.deepEqual(result1, jwk, 'should work when they agree');
 
-  const sig2 = await jose.JWS.createSign(
+  const sig2 = await JWS.createSign(
     // @ts-expect-error types are off
     options,
     {
@@ -291,7 +291,7 @@ test('should work with jku from cache when jku fails after first get', async (t)
   const resurrectJku =
     'https://localhost:3000/reset_jwks_uri_dies_after_first_request';
   await request.get(resurrectJku);
-  const sig = await jose.JWS.createSign(
+  const sig = await JWS.createSign(
     // @ts-expect-error types are off
     options,
     {

@@ -17,10 +17,10 @@
 
 import url from 'node:url';
 
+import { JWK as JOSE_JWK, util } from 'node-jose';
 import type { Entry } from 'type-fest';
 import debug from 'debug';
 import equal from 'deep-equal';
-import jose from 'node-jose';
 import request from 'superagent';
 
 import type { RSA_JWK } from 'pem-jwk';
@@ -32,7 +32,7 @@ const warn = debug('oada-certs:jwks-utils:warn');
 /**
  * @todo create union of JWK types discriminated on kty
  */
-export interface JWK extends Partial<RSA_JWK & jose.JWK.RawKey> {
+export interface JWK extends Partial<RSA_JWK & JOSE_JWK.RawKey> {
   /**
    * Must have "kty" to be a JWK
    */
@@ -236,7 +236,7 @@ export function decodeWithoutVerify(jwt: string) {
   let payload: unknown;
   try {
     header = JSON.parse(
-      jose.util.base64url.decode(sheader!).toString()
+      util.base64url.decode(sheader!).toString()
     ) as JOSEHeader;
   } catch (error: unknown) {
     throw new Error(
@@ -245,7 +245,7 @@ export function decodeWithoutVerify(jwt: string) {
   }
 
   try {
-    payload = JSON.parse(jose.util.base64url.decode(spayload!).toString());
+    payload = JSON.parse(util.base64url.decode(spayload!).toString());
   } catch (error: unknown) {
     warn(
       'Could not JSON.parse payload, assuming it is a string to be left alone. Payload string is: %s, error was: %o',

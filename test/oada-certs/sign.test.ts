@@ -21,7 +21,7 @@ import cloneDeep from 'clone-deep';
 import jose from 'node-jose';
 
 // The module to be "checked" (i.e. under test)
-import type { JOSEHeader, JWK } from '../../src/jwks-utils.js';
+import type { JOSEHeader, JWK } from '../../dist/jwks-utils.js';
 import { sign } from '../../dist/sign.js';
 
 // Keypair used for signing in the tests:
