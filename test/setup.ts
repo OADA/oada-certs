@@ -17,6 +17,7 @@
 
 import fs from 'node:fs';
 import https from 'node:https';
+import { once } from 'node:events';
 
 import cors from 'cors';
 import express from 'express';
@@ -69,4 +70,18 @@ const options = {
   rejectUnauthorized: false,
 };
 
-https.createServer(options, app).listen(3000);
+const server = https.createServer(options, app);
+// eslint-disable-next-line github/no-then
+const uri = once(server, 'listening').then(() => {
+  const address = server.address();
+  if (!address) {
+    throw new Error('Server did not start');
+  }
+
+  return typeof address === 'string'
+    ? address
+    : `https://localhost:${address.port}`;
+});
+server.listen();
+
+export default uri;

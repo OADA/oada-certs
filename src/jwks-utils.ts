@@ -30,14 +30,23 @@ const info = debug('oada-certs:jwks-utils:info');
 const warn = debug('oada-certs:jwks-utils:warn');
 
 /**
- * @todo create union of JWK types discriminated on kty
+ * @todo Better discriminated union of JWK types?
  */
-export interface JWK extends Partial<RSA_JWK & jose_JWK.RawKey> {
+export type JWK = BaseJWK | JWKpem | JWKrsa;
+export interface BaseJWK extends Partial<jose_JWK.RawKey> {
   /**
    * Must have "kty" to be a JWK
    */
   kty: string;
-  pem?: string;
+}
+export interface JWKpem extends BaseJWK {
+  kty: 'PEM';
+  pem: string;
+}
+export interface JWKrsa extends BaseJWK, RSA_JWK {
+  kty: 'RSA';
+  n: string;
+  e: string;
 }
 export interface JWKs {
   keys: readonly JWK[];

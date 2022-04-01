@@ -22,17 +22,20 @@ import request from 'superagent';
 
 import { JWK, jwkForSignature } from '../../dist/jwks-utils.js';
 
-import '../setup.js';
 import jwkSet from '../jwk_set.js';
 import jwkSetPriv from '../jwk_set_priv.js';
+import server from '../setup.js';
 
-const jku = 'https://localhost:3000/jwks_uri';
+let testServer: string;
+let jku: string;
 const [jwk, jwk2] = jwkSet.keys;
 let key: JWK;
 
 test.before(async () => {
   // Setup a couple of keys and a keystore to use:
   key = await jose_JWK.asKey(jwkSetPriv.keys[0]);
+  testServer = `${await server}`;
+  jku = `${testServer}/jwks_uri`;
 });
 
 const options = { format: 'compact' };
@@ -92,7 +95,7 @@ test('should by default use the hint string to fetch the jwks instead of the jku
     {
       key,
       header: {
-        jku: 'https://localhost:3000/does_not_exist',
+        jku: `${testServer}/does_not_exist`,
         kid: jwk.kid,
       },
     }
@@ -202,10 +205,7 @@ test('should fail when JWKS URI can not be parsed', async (t) => {
     .update('FOO BAR')
     .final();
   await t.throwsAsync(
-    jwkForSignature(
-      sig as unknown as string,
-      'https://localhost:3000/jwks_uri_broken'
-    )
+    jwkForSignature(sig as unknown as string, `${testServer}/jwks_uri_broken`)
   );
 });
 
@@ -218,10 +218,7 @@ test('should fail when JWKS URI hosts an invalid JWK', async (t) => {
     .update('FOO BAR')
     .final();
   await t.throwsAsync(
-    jwkForSignature(
-      sig as unknown as string,
-      'https://localhost:3000/jwks_uri_invalid'
-    )
+    jwkForSignature(sig as unknown as string, `${testServer}/jwks_uri_invalid`)
   );
 });
 
@@ -237,11 +234,9 @@ test('should timeout', async (t) => {
     .update('FOO BAR')
     .final();
   await t.throwsAsync(
-    jwkForSignature(
-      sig as unknown as string,
-      'https://localhost:3000/jwks_uri_slow',
-      { timeout: 1 }
-    )
+    jwkForSignature(sig as unknown as string, `${testServer}/jwks_uri_slow`, {
+      timeout: 1,
+    })
   );
 });
 
@@ -286,10 +281,8 @@ test('with both "jku" and "jwk" JOSE headers', async (t) => {
 });
 
 test('should work with jku from cache when jku fails after first get', async (t) => {
-  const jkuThatDies =
-    'https://localhost:3000/jwks_uri_dies_after_first_request';
-  const resurrectJku =
-    'https://localhost:3000/reset_jwks_uri_dies_after_first_request';
+  const jkuThatDies = `${testServer}/jwks_uri_dies_after_first_request`;
+  const resurrectJku = `${testServer}/reset_jwks_uri_dies_after_first_request`;
   await request.get(resurrectJku);
   const sig = await JWS.createSign(
     // @ts-expect-error types are off
