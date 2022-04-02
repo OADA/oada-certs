@@ -56,6 +56,8 @@ export async function sign(
   // AsKey needs the key to be just the pem string if it's a pem
   let privatejwk = await (typeof key === 'string'
     ? jose_JWK.asKey(key, 'pem')
+    : key.kty === 'PEM'
+    ? jose_JWK.asKey(key.pem, 'pem')
     : jose_JWK.asKey(key));
   // If (key.kid) privatejwk.kid = key.kid; // maintain kid from original if passed
   // options.header.kid can override the one in the private key:

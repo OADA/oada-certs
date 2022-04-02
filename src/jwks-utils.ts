@@ -32,7 +32,7 @@ const warn = debug('oada-certs:jwks-utils:warn');
 /**
  * @todo Better discriminated union of JWK types?
  */
-export type JWK = BaseJWK | JWKpem | JWKrsa;
+export type JWK = JWKpem | JWKrsa;
 export interface BaseJWK extends Partial<jose_JWK.RawKey> {
   /**
    * Must have "kty" to be a JWK
